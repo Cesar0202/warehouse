@@ -52,82 +52,82 @@ export const PrintDispatchModal: React.FC<PrintDispatchModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fade-in font-sans">
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-sans">
+      <div className="bg-white rounded-xl border border-neutral-300 shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-neutral-200 bg-neutral-50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-neutral-100 border border-neutral-300 text-neutral-900 flex items-center justify-center">
               <Printer className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-base text-slate-900">
-                Imprimir Vale de Despacho
+              <h3 className="font-bold text-base text-neutral-900">
+                Imprimir Vale de Salida
               </h3>
-              <p className="text-xs text-slate-500 font-sans">
+              <p className="text-xs text-neutral-500 font-sans">
                 Formato limpio en blanco y negro para almacén
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition-colors"
+            className="text-neutral-400 hover:text-neutral-900 p-1.5 rounded-lg hover:bg-neutral-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-4">
+        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1 font-sans">
+            <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1 font-sans">
               Nombre del Técnico / Solicitante
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <User className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
               <input
                 type="text"
                 value={technicianName}
                 onChange={(e) => setTechnicianName(e.target.value)}
                 placeholder="Ej: Carlos Mendoza (o dejar vacío)"
                 autoFocus
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-sans"
+                className="w-full pl-9 pr-4 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 text-xs focus:bg-white focus:border-neutral-900 outline-none transition-all font-sans"
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-neutral-400 mt-1">
               Si lo dejas en blanco, se imprimirá una línea continua para llenarlo a mano.
             </p>
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 font-sans">
+            <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1.5 font-sans">
               Artículos a Incluir
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setFilterScope('selected')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-lg border text-left transition-all ${
                   filterScope === 'selected'
-                    ? 'border-blue-500 bg-blue-50/50 text-blue-900 font-semibold'
-                    : 'border-slate-200 text-slate-700 bg-white'
+                    ? 'border-neutral-900 bg-neutral-100 text-neutral-900 font-semibold'
+                    : 'border-neutral-200 text-neutral-700 bg-white hover:border-neutral-300'
                 }`}
               >
-                <p className="text-xs">Seleccionados</p>
-                <p className="text-[10px] text-slate-500">{results.filter(r => r.selected).length} ítems</p>
+                <p className="text-xs font-bold">Seleccionados</p>
+                <p className="text-[10px] text-neutral-500 font-mono">{results.filter(r => r.selected).length} ítems</p>
               </button>
 
               <button
                 type="button"
                 onClick={() => setFilterScope('in_stock')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-lg border text-left transition-all ${
                   filterScope === 'in_stock'
-                    ? 'border-blue-500 bg-blue-50/50 text-blue-900 font-semibold'
-                    : 'border-slate-200 text-slate-700 bg-white'
+                    ? 'border-neutral-900 bg-neutral-100 text-neutral-900 font-semibold'
+                    : 'border-neutral-200 text-neutral-700 bg-white hover:border-neutral-300'
                 }`}
               >
-                <p className="text-xs">Con Stock</p>
-                <p className="text-[10px] text-slate-500">
+                <p className="text-xs font-bold">Con Stock</p>
+                <p className="text-[10px] text-neutral-500 font-mono">
                   {results.filter(r => r.matchedItem && r.matchedItem.stock >= r.requestedQty).length} ítems
                 </p>
               </button>
@@ -135,32 +135,32 @@ export const PrintDispatchModal: React.FC<PrintDispatchModalProps> = ({
               <button
                 type="button"
                 onClick={() => setFilterScope('all')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
+                className={`p-2.5 rounded-lg border text-left transition-all ${
                   filterScope === 'all'
-                    ? 'border-blue-500 bg-blue-50/50 text-blue-900 font-semibold'
-                    : 'border-slate-200 text-slate-700 bg-white'
+                    ? 'border-neutral-900 bg-neutral-100 text-neutral-900 font-semibold'
+                    : 'border-neutral-200 text-neutral-700 bg-white hover:border-neutral-300'
                 }`}
               >
-                <p className="text-xs">Todos</p>
-                <p className="text-[10px] text-slate-500">{results.length} ítems</p>
+                <p className="text-xs font-bold">Todos</p>
+                <p className="text-[10px] text-neutral-500 font-mono">{results.length} ítems</p>
               </button>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:px-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-2">
+        <div className="p-4 sm:px-6 border-t border-neutral-200 bg-neutral-50 flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-all"
+            className="px-4 py-2 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-800 text-xs font-semibold rounded-lg transition-all"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleExecutePrint}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-sm shadow-blue-500/20 transition-all flex items-center gap-2"
+            className="px-5 py-2 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center gap-2"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir ({validItems.length} ítems)</span>

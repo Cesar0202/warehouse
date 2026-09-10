@@ -28,21 +28,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-sm font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-18">
+        <div className="flex flex-col sm:flex-row items-center justify-between py-2 sm:h-18 gap-2 sm:gap-0">
           {/* Logo & Title */}
-          <div>
+          <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start">
             <span className="font-bold text-base sm:text-lg tracking-tight text-neutral-900 font-mono">
               DEMO - ALMACÉN
             </span>
           </div>
 
           {/* Navigation Pill Bar */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <nav className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200">
+          <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <nav className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 min-w-max">
               <button
                 type="button"
                 onClick={() => setActiveTab('order')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
                   activeTab === 'order'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('catalog')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
                   activeTab === 'catalog'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
@@ -76,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('aliases')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
                   activeTab === 'aliases'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
@@ -92,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('upload')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
                   activeTab === 'upload'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
