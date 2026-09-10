@@ -10,6 +10,7 @@ import { AliasModal } from './components/AliasModal';
 import { ProductEditModal } from './components/ProductEditModal';
 import { ProductDetailDrawer } from './components/ProductDetailDrawer';
 import { AddItemModal } from './components/AddItemModal';
+import { LoginScreen } from './components/LoginScreen';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
 import { CatalogItem, AliasItem, ParsedLineResult, AISuggestion } from './types';
@@ -19,6 +20,9 @@ import { processOrderText } from './services/orderParser';
 import { hasGeminiApiKey, decipherTermWithAI } from './services/aiAgentService';
 
 export function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('warehouse_auth_session') === 'true';
+  });
   const [activeTab, setActiveTab] = useState<ActiveTab>('order');
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [aliases, setAliases] = useState<AliasItem[]>([]);
@@ -303,6 +307,15 @@ export function App() {
     showToast('success', 'Artículo añadido a la lista', `[${item.cod_arti}] ${item.descripcion} (${qty})`);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('warehouse_auth_session');
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col font-sans text-neutral-900">
       {/* Toast notifications */}
@@ -317,6 +330,7 @@ export function App() {
           aliasCount={aliases.length}
           pendingOrderCount={orderResults.length}
           hasAIKey={hasAIKey}
+          onLogout={handleLogout}
         />
       </div>
 
