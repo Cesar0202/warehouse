@@ -80,9 +80,24 @@
     "nota": "Cinta aislante eléctrica"
   },
   {
+    "alias": "cintas aislantes",
+    "cod_arti": "CIN01",
+    "nota": "Cintas aislantes"
+  },
+  {
+    "alias": "cinta negra",
+    "cod_arti": "CIN01",
+    "nota": "Cinta aislante negra"
+  },
+  {
     "alias": "cinta plateada",
     "cod_arti": "CIN02",
     "nota": "Cinta de aluminio / Duct tape"
+  },
+  {
+    "alias": "cintas plateadas",
+    "cod_arti": "CIN02",
+    "nota": "Cintas de aluminio / Duct tape"
   },
   {
     "alias": "cinta de aluminio",
@@ -90,9 +105,19 @@
     "nota": "Cinta de aluminio"
   },
   {
+    "alias": "cintas de aluminio",
+    "cod_arti": "CIN02",
+    "nota": "Cintas de aluminio"
+  },
+  {
     "alias": "cinta gris",
     "cod_arti": "CIN02",
     "nota": "Cinta de aluminio / multipropósito"
+  },
+  {
+    "alias": "cintas grises",
+    "cod_arti": "CIN02",
+    "nota": "Cintas de aluminio / multipropósito"
   },
   {
     "alias": "cinta 3m",
