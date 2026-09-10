@@ -173,6 +173,12 @@ const SYNONYM_MAP: Record<string, string[]> = {
   'platinadas': ['aluminio', 'plateada', 'galvanizado', 'inox', 'duct tape'],
   'platinado': ['aluminio', 'plateado', 'galvanizado', 'inox'],
   'platinados': ['aluminio', 'plateado', 'galvanizado', 'inox'],
+  'trapo': ['trapo industrial', 'color', 'blanco', 'colores'],
+  'trapos': ['trapo industrial', 'color', 'blanco', 'colores'],
+  'color': ['trapo industrial colores', 'trapo de color'],
+  'colores': ['trapo industrial colores', 'trapo de color'],
+  'blanco': ['trapo industrial blanco', 'trapo blanco', 'teflon', 'ptfe'],
+  'blancos': ['trapo industrial blanco', 'trapo blanco', 'teflon', 'ptfe'],
   'cinta': ['cintas', 'aislante', 'aluminio', 'teflon', 'masking', 'vulcanizante'],
   'cintas': ['cinta', 'aislante', 'aluminio', 'teflon', 'masking', 'vulcanizante'],
   'aluminio': ['plateada', 'plateado', 'platinada', 'cinta aluminio'],
@@ -181,7 +187,6 @@ const SYNONYM_MAP: Record<string, string[]> = {
   'negro': ['aislante', 'vulcanizante', 'pvc'],
   'blanca': ['teflon', 'ptfe', 'selladora'],
   'blancas': ['teflon', 'ptfe', 'selladora'],
-  'blanco': ['teflon', 'ptfe'],
   'drano': ['desatorador', 'soda caustica', 'acido muriatico', 'sapolio'],
   'draino': ['desatorador', 'soda caustica', 'sapolio'],
   'franks': ['abrazadera', 'caddy', 'soporte'],
@@ -217,7 +222,7 @@ export const decipherTermWithAI = async (
 
   const allItems = getCatalogData();
   const lowerTerm = term.toLowerCase();
-  const rawWords = lowerTerm.split(/\s+/).filter(w => w.length > 1 && !['de', 'para', 'el', 'la', 'un', 'una', 'con', 'sin', 'los', 'las'].includes(w));
+  const rawWords = lowerTerm.split(/\s+/).filter(w => w.length > 1 && !['de', 'para', 'el', 'la', 'un', 'una', 'con', 'sin', 'los', 'las', 'kilos', 'kilo', 'kg', 'und'].includes(w));
   
   // Stemming: include singular / base forms
   const searchTokens = new Set<string>();
@@ -232,14 +237,13 @@ export const decipherTermWithAI = async (
 
   const candidateMap = new Map<string, CatalogItem>();
 
-  // 1. Direct and fuzzy search with the original term and singular version
+  // 1. Direct and fuzzy search with the original term and rawLine
   const termMatches = searchCatalogFuzzy(term, 30);
   termMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
 
-  const singularTerm = Array.from(searchTokens).join(' ');
-  if (singularTerm !== term) {
-    const singularMatches = searchCatalogFuzzy(singularTerm, 30);
-    singularMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
+  if (rawLine && rawLine !== term) {
+    const rawMatches = searchCatalogFuzzy(rawLine, 30);
+    rawMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
   }
 
   // 2. Individual word fuzzy matches
@@ -255,7 +259,7 @@ export const decipherTermWithAI = async (
       const synMatches = searchCatalogFuzzy(syn, 20);
       synMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
 
-      // Also search combination of base word + synonym (e.g. "cinta aluminio")
+      // Combination search (e.g., "trapo blanco", "trapo color")
       const firstToken = Array.from(searchTokens)[0];
       if (firstToken && firstToken !== w) {
         const comboMatches = searchCatalogFuzzy(`${firstToken} ${syn}`, 20);
@@ -264,7 +268,7 @@ export const decipherTermWithAI = async (
     });
   });
 
-  // 4. Family-based enrichment: If matches contain specific families (e.g., CINTAS, TUBERIAS), pull representative items
+  // 4. Family-based enrichment: If matches contain specific families (e.g., TRAPO, CINTAS, TUBERIAS), pull items
   const matchedFamilies = new Set<string>();
   candidateMap.forEach(item => {
     if (item.familia) matchedFamilies.add(item.familia);
@@ -302,38 +306,86 @@ Contexto del Pedido:
 - Mensaje original: "${rawLine}"
 - Término detectado: "${term}"
 
+IMPORTANTE - DETECCIÓN DE MÚLTIPLES ARTÍCULOS EN UNA LÍNEA:
+Si la línea solicita DOS O MÁS ARTÍCULOS DIFERENTES (ejemplos: "trapo de color y blanco", "trapo de color y trapo blanco", "cinta aislante y teflon", "desarmador plano y estrella", "abrazadera 1 pulgada y 1/2 pulgada"):
+DEBES identificar CADA artículo por separado y devolver un objeto con la propiedad "items" conteniendo el array de cada artículo.
+
 Reglas Técnicas Clave:
-1. "cinta plateada", "cinta platinada" o "cinta ducto/gris" -> CINTA DE ALUMINIO o CINTA MULTIPROPÓSITO / DUCT TAPE.
-2. "cinta negra" -> CINTA AISLANTE / VULCANIZANTE.
-3. "cinta blanca / teflon" -> CINTA TEFLÓN.
-4. "drano / diablo rojo" -> DESATORADOR / SODA CÁUSTICA.
-5. "huincha / wincha" -> CINTA MÉTRICA o CINTA AISLANTE según el contexto.
-6. "desarmador" -> DESTORNILLADOR.
-7. "franks" -> ABRAZADERAS.
-8. Elige SIEMPRE el mejor "cod_arti" de la lista de candidatos adjunta.
-9. REGLA ESTRICTA: La "explicacion" DEBE tener MÁXIMO 1 O 2 LÍNEAS (máximo 20 palabras), clara y sin redundancias.
+1. "trapo de color / colores" -> TRAP02 (TRAPO INDUSTRIAL COLORES).
+2. "trapo blanco" -> TRAP01 (TRAPO INDUSTRIAL BLANCO).
+3. "cinta plateada", "cinta platinada" o "cinta ducto/gris" -> CIN02 (CINTA DE ALUMINIO).
+4. "cinta negra" -> CIN01 (CINTA AISLANTE).
+5. "cinta blanca / teflon" -> CIN08 (CINTA TEFLÓN).
+6. "drano / diablo rojo" -> DESATORADOR / SODA CÁUSTICA.
+7. "huincha / wincha" -> CINTA MÉTRICA o CINTA AISLANTE según el contexto.
+8. "desarmador" -> DESTORNILLADOR.
+9. "franks" -> ABRAZADERAS.
+10. Elige SIEMPRE el mejor "cod_arti" de la lista de candidatos adjunta.
+11. REGLA ESTRICTA: La "explicacion" DEBE tener MÁXIMO 1 O 2 LÍNEAS (máximo 20 palabras).
 
 Candidatos en inventario:
 ${JSON.stringify(candidateList, null, 1)}
 
-Responde ÚNICAMENTE con un JSON con este formato exacto:
+Responde ÚNICAMENTE con un JSON en uno de estos dos formatos:
+
+Formato A (Un solo artículo):
 {
   "cod_arti": "CÓDIGO_DEL_CATÁLOGO",
   "descripcion": "DESCRIPCIÓN_OFICIAL",
-  "explicacion": "Explicación técnica concisa en 1 o 2 líneas.",
+  "cantidad": 1,
+  "explicacion": "Explicación técnica en 1 línea.",
   "confianza": 95,
-  "alias_sugerido": "término normalizado para guardar como alias"
+  "alias_sugerido": "término normalizado"
+}
+
+Formato B (Dos o más artículos en la misma línea):
+{
+  "items": [
+    {
+      "cod_arti": "CÓDIGO_1",
+      "descripcion": "DESCRIPCIÓN_1",
+      "cantidad": 1,
+      "explicacion": "Explicación técnica en 1 línea.",
+      "confianza": 95,
+      "alias_sugerido": "término 1",
+      "detectedTerm": "nombre artículo 1"
+    },
+    {
+      "cod_arti": "CÓDIGO_2",
+      "descripcion": "DESCRIPCIÓN_2",
+      "cantidad": 1,
+      "explicacion": "Explicación técnica en 1 línea.",
+      "confianza": 95,
+      "alias_sugerido": "término 2",
+      "detectedTerm": "nombre artículo 2"
+    }
+  ]
 }
 `;
 
   const rawText = await callGeminiAPI(apiKey, systemInstruction);
-  const parsed: AISuggestion = extractAndParseJSON(rawText);
+  const parsed = extractAndParseJSON(rawText);
+
+  if (parsed.items && Array.isArray(parsed.items) && parsed.items.length > 0) {
+    parsed.items.forEach((sub: any) => {
+      const cat = getCatalogItemByCode(sub.cod_arti);
+      if (cat) sub.descripcion = cat.descripcion;
+    });
+    // Fill top-level fields from first item for safety
+    parsed.cod_arti = parsed.items[0].cod_arti;
+    parsed.descripcion = parsed.items[0].descripcion;
+    parsed.explicacion = parsed.items[0].explicacion;
+    parsed.confianza = parsed.items[0].confianza;
+    parsed.aliasSugerido = parsed.items[0].alias_sugerido || parsed.items[0].aliasSugerido;
+    return parsed as AISuggestion;
+  }
 
   const catalogItem = getCatalogItemByCode(parsed.cod_arti);
   if (catalogItem) {
     parsed.descripcion = catalogItem.descripcion;
   }
+  parsed.aliasSugerido = parsed.alias_sugerido || parsed.aliasSugerido;
 
-  return parsed;
+  return parsed as AISuggestion;
 };
 

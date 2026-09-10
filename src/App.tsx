@@ -138,7 +138,7 @@ export function App() {
     setOrderResults((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // AI Agent: Decipher Single Line
+  // AI Agent: Decipher Single Line (supports splitting compound items)
   const handleDecipherLineWithAI = async (line: ParsedLineResult) => {
     if (!hasAIKey) {
       showToast('warning', 'API Key no configurada', 'Coloca VITE_GEMINI_API_KEY en tu archivo .env.');
@@ -149,12 +149,50 @@ export function App() {
 
     try {
       const suggestion = await decipherTermWithAI(line.detectedTerm, line.rawLine);
+
+      // If the AI detected multiple distinct articles in this single line (e.g. "trapo color y trapo blanco")
+      if (suggestion.items && Array.isArray(suggestion.items) && suggestion.items.length > 1) {
+        const newRows: ParsedLineResult[] = suggestion.items.map((subItem, idx) => {
+          const catalogItem = getCatalogItemByCode(subItem.cod_arti);
+          const termLabel = subItem.detectedTerm || subItem.aliasSugerido || (catalogItem ? catalogItem.descripcion : subItem.cod_arti);
+          return {
+            id: `line-split-${line.id}-${idx}-${Date.now()}`,
+            rawLine: line.rawLine,
+            detectedTerm: termLabel,
+            requestedQty: subItem.cantidad ?? line.requestedQty,
+            matchedItem: catalogItem || null,
+            confidenceLevel: (subItem.confianza ?? 90) >= 80 ? 'high' : 'medium',
+            matchScore: subItem.confianza ?? 90,
+            matchType: 'ai_agent',
+            aiSuggestion: subItem,
+            selected: true
+          };
+        });
+
+        setOrderResults((prev) => {
+          const targetIndex = prev.findIndex((r) => r.id === line.id);
+          if (targetIndex === -1) return prev;
+          const updated = [...prev];
+          updated.splice(targetIndex, 1, ...newRows);
+          return updated;
+        });
+
+        showToast(
+          'success',
+          'Línea compuesta dividida con éxito',
+          `Se crearon ${newRows.length} registros separados para cada artículo.`
+        );
+        return;
+      }
+
+      // Single item resolution
       const catalogItem = getCatalogItemByCode(suggestion.cod_arti);
 
       handleUpdateLineResult(line.id, {
         isDecipheringAI: false,
         aiSuggestion: suggestion,
         matchedItem: catalogItem || line.matchedItem,
+        requestedQty: suggestion.cantidad ?? line.requestedQty,
         confidenceLevel: suggestion.confianza >= 80 ? 'high' : 'medium',
         matchScore: suggestion.confianza,
         matchType: 'ai_agent',
@@ -194,12 +232,43 @@ export function App() {
           try {
             handleUpdateLineResult(line.id, { isDecipheringAI: true });
             const suggestion = await decipherTermWithAI(line.detectedTerm, line.rawLine);
+
+            if (suggestion.items && Array.isArray(suggestion.items) && suggestion.items.length > 1) {
+              const newRows: ParsedLineResult[] = suggestion.items.map((subItem, idx) => {
+                const catalogItem = getCatalogItemByCode(subItem.cod_arti);
+                const termLabel = subItem.detectedTerm || subItem.aliasSugerido || (catalogItem ? catalogItem.descripcion : subItem.cod_arti);
+                return {
+                  id: `line-split-${line.id}-${idx}-${Date.now()}`,
+                  rawLine: line.rawLine,
+                  detectedTerm: termLabel,
+                  requestedQty: subItem.cantidad ?? line.requestedQty,
+                  matchedItem: catalogItem || null,
+                  confidenceLevel: (subItem.confianza ?? 90) >= 80 ? 'high' : 'medium',
+                  matchScore: subItem.confianza ?? 90,
+                  matchType: 'ai_agent',
+                  aiSuggestion: subItem,
+                  selected: true
+                };
+              });
+
+              setOrderResults((prev) => {
+                const targetIndex = prev.findIndex((r) => r.id === line.id);
+                if (targetIndex === -1) return prev;
+                const updated = [...prev];
+                updated.splice(targetIndex, 1, ...newRows);
+                return updated;
+              });
+              resolvedCount += newRows.length;
+              return;
+            }
+
             const catalogItem = getCatalogItemByCode(suggestion.cod_arti);
 
             handleUpdateLineResult(line.id, {
               isDecipheringAI: false,
               aiSuggestion: suggestion,
               matchedItem: catalogItem || line.matchedItem,
+              requestedQty: suggestion.cantidad ?? line.requestedQty,
               confidenceLevel: suggestion.confianza >= 80 ? 'high' : 'medium',
               matchScore: suggestion.confianza,
               matchType: 'ai_agent',
@@ -215,7 +284,7 @@ export function App() {
     }
 
     setIsDecipheringBatch(false);
-    showToast('success', 'Procesamiento IA completado', `${resolvedCount} de ${unresolved.length} términos resueltos.`);
+    showToast('success', 'Procesamiento IA completado', `${resolvedCount} artículos resueltos.`);
   };
 
   // Accept AI Suggestion & auto-save to Alias Dictionary

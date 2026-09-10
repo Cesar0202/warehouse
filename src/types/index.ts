@@ -16,12 +16,18 @@ export interface AliasItem {
 
 export type ConfidenceLevel = 'high' | 'medium' | 'low';
 
-export interface AISuggestion {
+export interface AISuggestionItem {
   cod_arti: string;
   descripcion: string;
+  cantidad?: number;
   explicacion: string;
   confianza: number;
-  aliasSugerido: string;
+  aliasSugerido?: string;
+  detectedTerm?: string;
+}
+
+export interface AISuggestion extends AISuggestionItem {
+  items?: AISuggestionItem[];
 }
 
 export interface ParsedLineResult {
