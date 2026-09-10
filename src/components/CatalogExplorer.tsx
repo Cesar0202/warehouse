@@ -45,6 +45,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   // Sorting
   const [sortField, setSortField] = useState<SortField>('cod_arti');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [hasUserSorted, setHasUserSorted] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -106,26 +107,45 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
       list = list.filter(item => item.stock > 0 && item.stock <= 5);
     }
 
-    // Sort
-    list.sort((a, b) => {
-      let valA: any = a[sortField] ?? '';
-      let valB: any = b[sortField] ?? '';
+    // Sort: if searching, maintain search relevance score unless user clicked a sort header
+    if (!searchTerm.trim()) {
+      list.sort((a, b) => {
+        let valA: any = a[sortField] ?? '';
+        let valB: any = b[sortField] ?? '';
 
-      if (sortField === 'stock') {
-        valA = Number(valA) || 0;
-        valB = Number(valB) || 0;
-      } else {
-        valA = String(valA).toLowerCase();
-        valB = String(valB).toLowerCase();
-      }
+        if (sortField === 'stock') {
+          valA = Number(valA) || 0;
+          valB = Number(valB) || 0;
+        } else {
+          valA = String(valA).toLowerCase();
+          valB = String(valB).toLowerCase();
+        }
 
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
-    });
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else if (hasUserSorted) {
+      list.sort((a, b) => {
+        let valA: any = a[sortField] ?? '';
+        let valB: any = b[sortField] ?? '';
+
+        if (sortField === 'stock') {
+          valA = Number(valA) || 0;
+          valB = Number(valB) || 0;
+        } else {
+          valA = String(valA).toLowerCase();
+          valB = String(valB).toLowerCase();
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
 
     return list;
-  }, [catalog, searchTerm, selectedFamily, selectedLocation, stockFilter, sortField, sortOrder]);
+  }, [catalog, searchTerm, selectedFamily, selectedLocation, stockFilter, sortField, sortOrder, hasUserSorted]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const paginatedItems = useMemo(() => {
@@ -134,6 +154,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   }, [filteredItems, currentPage, pageSize]);
 
   const handleSort = (field: SortField) => {
+    setHasUserSorted(true);
     if (sortField === field) {
       setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
     } else {

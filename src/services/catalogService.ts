@@ -68,22 +68,92 @@ export const getCatalogItemByCode = (codArti: string): CatalogItem | undefined =
   return catalogMap.get(codArti.toUpperCase().trim());
 };
 
-export const searchCatalogFuzzy = (query: string, limit = 15): { item: CatalogItem; score: number }[] => {
+export const searchCatalogFuzzy = (query: string, limit = 50): { item: CatalogItem; score: number }[] => {
   if (!query.trim()) return [];
   const q = query.trim().toUpperCase();
+  const qTerms = q.split(/\s+/).filter(t => t.length > 0);
 
-  // If query is an exact or prefix match on cod_arti, prioritize it directly
-  const exact = catalogMap.get(q);
-  if (exact) {
-    return [{ item: exact, score: 100 }];
+  // 1. Exact code match
+  const exactCode = catalogMap.get(q);
+  if (exactCode) {
+    return [{ item: exactCode, score: 100 }];
   }
 
-  if (!catalogFuse) return [];
-  const results = catalogFuse.search(query, { limit });
-  return results.map(r => ({
-    item: r.item,
-    score: Math.round((1 - (r.score ?? 0)) * 100)
-  }));
+  // 2. Direct Substring & Word Match scoring across all catalog data
+  const scoredDirect: { item: CatalogItem; score: number }[] = [];
+  const seenCodes = new Set<string>();
+
+  for (const item of catalogData) {
+    const desc = item.descripcion.toUpperCase();
+    const cod = item.cod_arti.toUpperCase();
+    const fam = (item.familia || '').toUpperCase();
+
+    // Exact full description match
+    if (desc === q) {
+      scoredDirect.push({ item, score: 100 });
+      seenCodes.add(cod);
+      continue;
+    }
+
+    // Description starts with query (e.g. "DESATORADOR...")
+    if (desc.startsWith(q)) {
+      scoredDirect.push({ item, score: 98 });
+      seenCodes.add(cod);
+      continue;
+    }
+
+    // Code starts with query
+    if (cod.startsWith(q)) {
+      scoredDirect.push({ item, score: 97 });
+      seenCodes.add(cod);
+      continue;
+    }
+
+    // Contains the whole query phrase as a word
+    const wordBoundaryRegex = new RegExp(`(?:^|\\s)${q}(?:$|\\s|\\,|\\.|\\-)`, 'i');
+    if (wordBoundaryRegex.test(desc)) {
+      scoredDirect.push({ item, score: 95 });
+      seenCodes.add(cod);
+      continue;
+    }
+
+    // Contains the whole query anywhere in description
+    if (desc.includes(q)) {
+      scoredDirect.push({ item, score: 90 });
+      seenCodes.add(cod);
+      continue;
+    }
+
+    // Contains all terms (multi-word search like "curva 3/4 conduit")
+    if (qTerms.length > 1 && qTerms.every(term => desc.includes(term) || cod.includes(term) || fam.includes(term))) {
+      scoredDirect.push({ item, score: 85 });
+      seenCodes.add(cod);
+      continue;
+    }
+  }
+
+  // 3. Fallback to Fuse.js for typo tolerance if few direct matches
+  if (catalogFuse && scoredDirect.length < limit) {
+    const fuseResults = catalogFuse.search(query, { limit: limit * 2 });
+    for (const r of fuseResults) {
+      const cod = r.item.cod_arti.toUpperCase();
+      if (!seenCodes.has(cod)) {
+        const score = Math.round((1 - (r.score ?? 0)) * 80); // max 80% for pure fuzzy
+        if (score >= 40) {
+          scoredDirect.push({ item: r.item, score });
+          seenCodes.add(cod);
+        }
+      }
+    }
+  }
+
+  // Sort by score descending
+  scoredDirect.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.item.descripcion.localeCompare(b.item.descripcion);
+  });
+
+  return scoredDirect.slice(0, limit);
 };
 
 /**
