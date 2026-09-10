@@ -52,6 +52,20 @@ try {
   // ignore
 }
 
+// Helper to robustly extract and parse JSON from Gemini text response
+function extractAndParseJSON(rawText: string): any {
+  let cleaned = rawText.trim();
+  cleaned = cleaned.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+
+  return JSON.parse(cleaned);
+}
+
 /**
  * Execute Gemini API request trying available models with instant caching for maximum speed
  */
@@ -84,7 +98,7 @@ async function callGeminiAPI(apiKey: string, promptText: string): Promise<string
           ],
           generationConfig: {
             temperature: 0.0,
-            maxOutputTokens: 250,
+            maxOutputTokens: 1024,
             responseMimeType: 'application/json'
           }
         })
@@ -106,6 +120,10 @@ async function callGeminiAPI(apiKey: string, promptText: string): Promise<string
       } else {
         const errJson = await res.json().catch(() => ({}));
         lastErrorMsg = errJson.error?.message || `Error ${res.status}: ${res.statusText}`;
+        if (inMemoryWorkingModel && inMemoryWorkingModel.model === model) {
+          inMemoryWorkingModel = null;
+          try { localStorage.removeItem(WORKING_MODEL_STORAGE_KEY); } catch {}
+        }
         // If model is busy (503), deprecated (404), rate-limited (429) or internal error (500), try next candidate
         if (res.status === 404 || res.status === 429 || res.status === 500 || res.status === 503) {
           continue;
@@ -151,9 +169,13 @@ const SYNONYM_MAP: Record<string, string[]> = {
   'plateadas': ['aluminio', 'duct tape', 'galvanizado', 'inox', 'zincado', 'gris'],
   'plateado': ['aluminio', 'galvanizado', 'inox', 'zincado', 'duct tape', 'gris'],
   'plateados': ['aluminio', 'galvanizado', 'inox', 'zincado', 'duct tape', 'gris'],
+  'platinada': ['aluminio', 'plateada', 'galvanizado', 'inox', 'duct tape'],
+  'platinadas': ['aluminio', 'plateada', 'galvanizado', 'inox', 'duct tape'],
+  'platinado': ['aluminio', 'plateado', 'galvanizado', 'inox'],
+  'platinados': ['aluminio', 'plateado', 'galvanizado', 'inox'],
   'cinta': ['cintas', 'aislante', 'aluminio', 'teflon', 'masking', 'vulcanizante'],
   'cintas': ['cinta', 'aislante', 'aluminio', 'teflon', 'masking', 'vulcanizante'],
-  'aluminio': ['plateada', 'plateado', 'cinta aluminio'],
+  'aluminio': ['plateada', 'plateado', 'platinada', 'cinta aluminio'],
   'negra': ['aislante', 'vulcanizante', 'pvc'],
   'negras': ['aislante', 'vulcanizante', 'pvc'],
   'negro': ['aislante', 'vulcanizante', 'pvc'],
@@ -281,7 +303,7 @@ Contexto del Pedido:
 - Término detectado: "${term}"
 
 Reglas Técnicas Clave:
-1. "cinta plateada" o "cinta ducto/gris" -> CINTA DE ALUMINIO o CINTA MULTIPROPÓSITO / DUCT TAPE.
+1. "cinta plateada", "cinta platinada" o "cinta ducto/gris" -> CINTA DE ALUMINIO o CINTA MULTIPROPÓSITO / DUCT TAPE.
 2. "cinta negra" -> CINTA AISLANTE / VULCANIZANTE.
 3. "cinta blanca / teflon" -> CINTA TEFLÓN.
 4. "drano / diablo rojo" -> DESATORADOR / SODA CÁUSTICA.
@@ -305,15 +327,7 @@ Responde ÚNICAMENTE con un JSON con este formato exacto:
 `;
 
   const rawText = await callGeminiAPI(apiKey, systemInstruction);
-
-  let cleaned = rawText.trim();
-  if (cleaned.startsWith('```json')) {
-    cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
-  } else if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
-  }
-
-  const parsed: AISuggestion = JSON.parse(cleaned);
+  const parsed: AISuggestion = extractAndParseJSON(rawText);
 
   const catalogItem = getCatalogItemByCode(parsed.cod_arti);
   if (catalogItem) {
