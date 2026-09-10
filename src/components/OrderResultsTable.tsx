@@ -20,7 +20,8 @@ import {
   Clock,
   HelpCircle,
   PackageCheck,
-  PackageX
+  PackageX,
+  Plus
 } from 'lucide-react';
 import { ParsedLineResult, AISuggestion } from '../types';
 import { formatAsCleanText, exportToExcel, exportToCSV } from '../services/exportService';
@@ -33,6 +34,7 @@ interface OrderResultsTableProps {
   onDeleteResult: (id: string) => void;
   onOpenCatalogSearch: (lineResult: ParsedLineResult) => void;
   onOpenAliasModal: (lineResult: ParsedLineResult) => void;
+  onOpenAddItem?: () => void;
   onDecipherLineWithAI: (lineResult: ParsedLineResult) => Promise<void>;
   onDecipherAllUnresolvedWithAI: () => Promise<void>;
   onAcceptAISuggestion: (lineResult: ParsedLineResult, suggestion: AISuggestion) => void;
@@ -48,6 +50,7 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
   onDeleteResult,
   onOpenCatalogSearch,
   onOpenAliasModal,
+  onOpenAddItem,
   onDecipherLineWithAI,
   onDecipherAllUnresolvedWithAI,
   onAcceptAISuggestion,
@@ -226,13 +229,24 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
         <div className="bg-white rounded-xl border border-neutral-200/90 shadow-sm overflow-hidden">
           {/* Table Top Header / Filter Controls */}
           <div className="p-4 sm:px-5 border-b border-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-neutral-50/70">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="font-bold text-base text-neutral-900">
                 Homologación & Verificación de Stock
               </span>
               <span className="px-2 py-0.5 rounded text-xs font-mono font-semibold bg-neutral-200 text-neutral-800">
                 {filteredRows.length} ítems
               </span>
+              {onOpenAddItem && (
+                <button
+                  type="button"
+                  onClick={onOpenAddItem}
+                  className="px-3 py-1 bg-neutral-900 hover:bg-black text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1 shadow-sm"
+                  title="Agregar artículo manualmente por código o descripción"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Agregar Artículo</span>
+                </button>
+              )}
             </div>
 
             {/* Filter Pills */}

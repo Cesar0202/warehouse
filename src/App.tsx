@@ -9,6 +9,7 @@ import { CatalogSearchModal } from './components/CatalogSearchModal';
 import { AliasModal } from './components/AliasModal';
 import { ProductEditModal } from './components/ProductEditModal';
 import { ProductDetailDrawer } from './components/ProductDetailDrawer';
+import { AddItemModal } from './components/AddItemModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
 import { CatalogItem, AliasItem, ParsedLineResult, AISuggestion } from './types';
@@ -43,6 +44,9 @@ export function App() {
 
   const [productDetailDrawerOpen, setProductDetailDrawerOpen] = useState(false);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<CatalogItem | null>(null);
+
+  // Add Item Modal state
+  const [addItemModalOpen, setAddItemModalOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -283,6 +287,22 @@ export function App() {
     setProductDetailDrawerOpen(true);
   };
 
+  const handleAddDirectItem = (item: CatalogItem, qty: number) => {
+    const newLine: ParsedLineResult = {
+      id: `line-manual-${Date.now()}-${Math.random()}`,
+      rawLine: `Manual: ${item.cod_arti} x ${qty}`,
+      detectedTerm: item.descripcion,
+      requestedQty: qty,
+      matchedItem: item,
+      confidenceLevel: 'high',
+      matchScore: 100,
+      matchType: 'manual',
+      selected: true
+    };
+    setOrderResults((prev) => [newLine, ...prev]);
+    showToast('success', 'Artículo añadido a la lista', `[${item.cod_arti}] ${item.descripcion} (${qty})`);
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col font-sans text-neutral-900">
       {/* Toast notifications */}
@@ -331,6 +351,7 @@ export function App() {
                   onDeleteResult={handleDeleteLineResult}
                   onOpenCatalogSearch={handleOpenCatalogSearchForLine}
                   onOpenAliasModal={handleOpenAliasModalFromRow}
+                  onOpenAddItem={() => setAddItemModalOpen(true)}
                   onDecipherLineWithAI={handleDecipherLineWithAI}
                   onDecipherAllUnresolvedWithAI={handleDecipherAllUnresolvedWithAI}
                   onAcceptAISuggestion={handleAcceptAISuggestion}
@@ -386,6 +407,12 @@ export function App() {
       </main>
 
       {/* Modals & Drawers */}
+      <AddItemModal
+        isOpen={addItemModalOpen}
+        onClose={() => setAddItemModalOpen(false)}
+        onAddItem={handleAddDirectItem}
+      />
+
       <CatalogSearchModal
         isOpen={catalogSearchModalOpen}
         onClose={() => setCatalogSearchModalOpen(false)}
