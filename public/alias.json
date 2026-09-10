@@ -1,0 +1,162 @@
+[
+  {
+    "alias": "drano",
+    "cod_arti": "DES01",
+    "nota": "Desatorador Sapolio / Químico"
+  },
+  {
+    "alias": "draino",
+    "cod_arti": "DES01",
+    "nota": "Variación fonética drano"
+  },
+  {
+    "alias": "desatorador sapolio",
+    "cod_arti": "DES01",
+    "nota": "Nombre comercial"
+  },
+  {
+    "alias": "liquido destapacaños",
+    "cod_arti": "DES01",
+    "nota": "Jerga"
+  },
+  {
+    "alias": "curva 3/4",
+    "cod_arti": "CUR06",
+    "nota": "Curva conduit 3/4"
+  },
+  {
+    "alias": "curva conduit 3/4",
+    "cod_arti": "CUR06",
+    "nota": "Curva conduit 3/4"
+  },
+  {
+    "alias": "curva conduit de 3/4",
+    "cod_arti": "CUR06",
+    "nota": "Curva conduit 3/4"
+  },
+  {
+    "alias": "curva conduit 1",
+    "cod_arti": "CUR07",
+    "nota": "Curva conduit 1 pulg"
+  },
+  {
+    "alias": "curva conduit 1/2",
+    "cod_arti": "CUR09",
+    "nota": "Curva conduit 1/2 pulg"
+  },
+  {
+    "alias": "union conduit 1",
+    "cod_arti": "UNI47",
+    "nota": "Unión conduit 1"
+  },
+  {
+    "alias": "union conduit de 1",
+    "cod_arti": "UNI47",
+    "nota": "Unión conduit 1"
+  },
+  {
+    "alias": "teflon",
+    "cod_arti": "CIN08",
+    "nota": "Cinta teflón genérica"
+  },
+  {
+    "alias": "cinta teflon",
+    "cod_arti": "CIN08",
+    "nota": "Cinta teflón"
+  },
+  {
+    "alias": "teflon 2 rollos",
+    "cod_arti": "CIN08",
+    "nota": "Cinta teflón"
+  },
+  {
+    "alias": "teflon 3/4",
+    "cod_arti": "CIN08",
+    "nota": "Cinta teflón"
+  },
+  {
+    "alias": "cinta aislante",
+    "cod_arti": "CIN01",
+    "nota": "Cinta aislante eléctrica"
+  },
+  {
+    "alias": "cinta 3m",
+    "cod_arti": "CIN02",
+    "nota": "Cinta aislante 3M / Vulcanizante"
+  },
+  {
+    "alias": "cinta vulcanizante",
+    "cod_arti": "CIN04",
+    "nota": "Cinta vulcanizante"
+  },
+  {
+    "alias": "franks",
+    "cod_arti": "BRA011",
+    "nota": "Abrazaderas tipo Frank / Caddy"
+  },
+  {
+    "alias": "frank",
+    "cod_arti": "BRA011",
+    "nota": "Abrazadera Frank"
+  },
+  {
+    "alias": "abrazadera frank",
+    "cod_arti": "ABRA02",
+    "nota": "Abrazadera Frank"
+  },
+  {
+    "alias": "silicona transparente",
+    "cod_arti": "SIL01",
+    "nota": "Silicona multiuso"
+  },
+  {
+    "alias": "silicona",
+    "cod_arti": "SIL01",
+    "nota": "Silicona multiuso"
+  },
+  {
+    "alias": "wd40",
+    "cod_arti": "LUB01",
+    "nota": "Lubricante aflojatodo"
+  },
+  {
+    "alias": "aflojatodo",
+    "cod_arti": "LUB01",
+    "nota": "Lubricante en spray"
+  },
+  {
+    "alias": "perno hexagonal",
+    "cod_arti": "PER01",
+    "nota": "Perno hexagonal"
+  },
+  {
+    "alias": "tarugo 1/4",
+    "cod_arti": "TAR01",
+    "nota": "Tarugo plástico"
+  },
+  {
+    "alias": "tarugo 5/16",
+    "cod_arti": "TAR02",
+    "nota": "Tarugo plástico"
+  },
+  {
+    "alias": "tarugos",
+    "cod_arti": "TAR01",
+    "nota": "Tarugo plástico"
+  },
+  {
+    "alias": "cintillo",
+    "cod_arti": "CIN10",
+    "nota": "Precinto de nylon / amarre"
+  },
+  {
+    "alias": "precintos",
+    "cod_arti": "CIN10",
+    "nota": "Precinto de nylon / amarre"
+  },
+  {
+    "alias": "amarras",
+    "cod_arti": "CIN10",
+    "nota": "Precintos"
+  }
+]
