@@ -471,7 +471,7 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
 
                       {/* Confidence */}
                       <td className="py-3 px-3">
-                        <div>
+                        <div className="space-y-1.5">
                           {row.matchType === 'ai_agent' ? (
                             <span className="px-2.5 py-0.5 rounded bg-neutral-900 text-white font-mono text-[11px] font-bold">
                               IA ({row.matchScore}%)
@@ -481,39 +481,46 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
                               ALTA ({row.matchScore}%)
                             </span>
                           ) : row.confidenceLevel === 'medium' ? (
-                            <div className="space-y-1">
-                              <span className="px-2.5 py-0.5 rounded bg-neutral-200 text-neutral-800 font-mono text-[11px] font-bold">
-                                REVISAR ({row.matchScore}%)
-                              </span>
-                              {row.alternativeMatches && row.alternativeMatches.length > 0 && (
-                                <select
-                                  onChange={(e) => {
-                                    const alt = row.alternativeMatches?.find(a => a.item.cod_arti === e.target.value);
-                                    if (alt) {
-                                      onUpdateResult(row.id, {
-                                        matchedItem: alt.item,
-                                        confidenceLevel: 'high',
-                                        matchScore: alt.score,
-                                        matchType: 'manual'
-                                      });
-                                    }
-                                  }}
-                                  defaultValue=""
-                                  className="block w-full text-[10px] font-mono p-1 bg-white border border-neutral-300 rounded text-neutral-900"
-                                >
-                                  <option value="" disabled>Alternativas...</option>
-                                  {row.alternativeMatches.map(alt => (
-                                    <option key={alt.item.cod_arti} value={alt.item.cod_arti}>
-                                      [{alt.item.cod_arti}] {alt.item.descripcion}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-                            </div>
+                            <span className="px-2.5 py-0.5 rounded bg-neutral-200 text-neutral-800 font-mono text-[11px] font-bold">
+                              POR REVISAR ({row.matchScore}%)
+                            </span>
                           ) : (
                             <span className="px-2.5 py-0.5 rounded bg-neutral-100 text-neutral-500 border border-neutral-200 font-mono text-[11px] font-bold">
                               NO IDENTIFICADO
                             </span>
+                          )}
+
+                          {row.alternativeMatches && row.alternativeMatches.length > 0 && (
+                            <div className="mt-1 space-y-1">
+                              <select
+                                onChange={(e) => {
+                                  const selectedCode = e.target.value;
+                                  if (selectedCode === '__SEARCH_MORE__') {
+                                    onOpenCatalogSearch(row);
+                                    return;
+                                  }
+                                  const alt = row.alternativeMatches?.find(a => a.item.cod_arti === selectedCode);
+                                  if (alt) {
+                                    onUpdateResult(row.id, {
+                                      matchedItem: alt.item,
+                                      confidenceLevel: 'high',
+                                      matchScore: alt.score,
+                                      matchType: 'manual'
+                                    });
+                                  }
+                                }}
+                                defaultValue=""
+                                className="block w-full max-w-[200px] text-[11px] font-sans p-1 bg-white border border-neutral-400 rounded-md text-neutral-900 focus:ring-1 focus:ring-black outline-none shadow-sm cursor-pointer"
+                              >
+                                <option value="" disabled>Alternativas ({row.alternativeMatches.length})...</option>
+                                {row.alternativeMatches.map(alt => (
+                                  <option key={alt.item.cod_arti} value={alt.item.cod_arti}>
+                                    [{alt.item.cod_arti}] {alt.item.descripcion.slice(0, 35)}...
+                                  </option>
+                                ))}
+                                <option value="__SEARCH_MORE__">🔍 Ver más en inventario...</option>
+                              </select>
+                            </div>
                           )}
                         </div>
                       </td>

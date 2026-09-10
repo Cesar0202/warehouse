@@ -189,16 +189,20 @@ export const processOrderText = (rawInputText: string): ParsedLineResult[] => {
     }
 
     // STEP 3: Fuzzy Match in Official Catalog (Fuse.js on Descripción / Familia / Cod.Arti)
-    const catalogMatches = searchCatalogFuzzy(searchTarget, 5);
+    const catalogMatches = searchCatalogFuzzy(searchTarget, 10);
 
     if (catalogMatches.length > 0) {
       const topMatch = catalogMatches[0];
       const alternatives = catalogMatches.slice(1);
 
+      // Check if term is ambiguous (multiple items have high/close scores, e.g. "abrazadera")
+      const closeMatches = catalogMatches.filter(m => m.score >= 70 || (topMatch.score >= 70 && topMatch.score - m.score <= 15));
+      const isAmbiguous = closeMatches.length > 1;
+
       let confidenceLevel: ConfidenceLevel = 'low';
-      if (topMatch.score >= 80) {
+      if (topMatch.score >= 80 && !isAmbiguous) {
         confidenceLevel = 'high';
-      } else if (topMatch.score >= 50) {
+      } else if (topMatch.score >= 50 || isAmbiguous) {
         confidenceLevel = 'medium';
       } else {
         confidenceLevel = 'low';
