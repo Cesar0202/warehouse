@@ -7,9 +7,12 @@ import {
   Upload, 
   RotateCcw, 
   Search, 
-  Layers,
-  BookMarked,
-  FileCode
+  Layers, 
+  BookMarked, 
+  FileCode,
+  Edit3,
+  X,
+  Check
 } from 'lucide-react';
 import { AliasItem, CatalogItem } from '../types';
 import { addOrUpdateAlias, deleteAlias, resetDefaultAliases, saveAliases } from '../services/aliasService';
@@ -31,6 +34,7 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
   const [newAlias, setNewAlias] = useState('');
   const [newCodArti, setNewCodArti] = useState('');
   const [newNote, setNewNote] = useState('');
+  const [editingOriginalAlias, setEditingOriginalAlias] = useState<string | null>(null);
 
   const filteredAliases = useMemo(() => {
     if (!searchTerm.trim()) return aliases;
@@ -45,7 +49,22 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
     });
   }, [aliases, searchTerm]);
 
-  const handleAddAlias = (e: React.FormEvent) => {
+  const handleStartEdit = (item: AliasItem) => {
+    setEditingOriginalAlias(item.alias);
+    setNewAlias(item.alias);
+    setNewCodArti(item.cod_arti);
+    setNewNote(item.nota || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingOriginalAlias(null);
+    setNewAlias('');
+    setNewCodArti('');
+    setNewNote('');
+  };
+
+  const handleAddOrUpdateAlias = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAlias.trim() || !newCodArti.trim()) return;
 
@@ -54,12 +73,23 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
       onShowToast('warning', 'Código no registrado', `"${newCodArti}" no existe en el inventario actual.`);
     }
 
+    if (editingOriginalAlias && editingOriginalAlias !== newAlias.trim().toLowerCase()) {
+      deleteAlias(editingOriginalAlias);
+    }
+
     addOrUpdateAlias(newAlias.trim(), newCodArti.trim(), newNote.trim(), true);
     onRefreshAliases();
+
+    if (editingOriginalAlias) {
+      onShowToast('success', 'Alias actualizado', `"${newAlias}" -> [${newCodArti.toUpperCase()}]`);
+      setEditingOriginalAlias(null);
+    } else {
+      onShowToast('success', 'Alias registrado', `"${newAlias}" -> [${newCodArti.toUpperCase()}]`);
+    }
+
     setNewAlias('');
     setNewCodArti('');
     setNewNote('');
-    onShowToast('success', 'Alias registrado', `"${newAlias}" -> [${newCodArti.toUpperCase()}]`);
   };
 
   const handleDelete = (aliasText: string) => {
@@ -155,14 +185,35 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
         </div>
       </div>
 
-      {/* Add New Alias Card */}
-      <div className="bg-white rounded-xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm">
-        <h3 className="font-bold text-sm text-neutral-900 mb-4 flex items-center gap-2">
-          <BookMarked className="w-4 h-4 text-neutral-800" />
-          <span>Registrar Nueva Jerga / Alias Manual</span>
-        </h3>
+      {/* Add / Edit Alias Card */}
+      <div className={`bg-white rounded-xl border p-5 sm:p-6 shadow-sm transition-all ${editingOriginalAlias ? 'border-neutral-900 ring-1 ring-neutral-900' : 'border-neutral-200/90'}`}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-sm text-neutral-900 flex items-center gap-2">
+            {editingOriginalAlias ? (
+              <>
+                <Edit3 className="w-4 h-4 text-neutral-900" />
+                <span>Modificar Jerga / Alias: <span className="font-mono underline">{editingOriginalAlias}</span></span>
+              </>
+            ) : (
+              <>
+                <BookMarked className="w-4 h-4 text-neutral-800" />
+                <span>Registrar Nueva Jerga / Alias Manual</span>
+              </>
+            )}
+          </h3>
+          {editingOriginalAlias && (
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className="text-xs text-neutral-500 hover:text-neutral-900 flex items-center gap-1 font-medium"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Cancelar edición</span>
+            </button>
+          )}
+        </div>
 
-        <form onSubmit={handleAddAlias} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <form onSubmit={handleAddOrUpdateAlias} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-4">
             <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">
               Jerga o Nombre Coloquial
@@ -204,14 +255,33 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
             />
           </div>
 
-          <div className="sm:col-span-2 flex items-end">
+          <div className="sm:col-span-2 flex items-end gap-1.5">
             <button
               type="submit"
-              className="w-full py-2 px-4 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
+              className="w-full py-2 px-3 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5"
             >
-              <Plus className="w-4 h-4" />
-              <span>Guardar</span>
+              {editingOriginalAlias ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Actualizar</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  <span>Guardar</span>
+                </>
+              )}
             </button>
+            {editingOriginalAlias && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="py-2 px-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold rounded-lg transition-all"
+                title="Cancelar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </form>
       </div>
@@ -245,15 +315,19 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
                 <th className="py-3 px-4 min-w-[120px]">Código Oficial</th>
                 <th className="py-3 px-4 min-w-[280px]">Artículo en Catálogo</th>
                 <th className="py-3 px-4 min-w-[160px]">Nota / Origen</th>
-                <th className="py-3 px-4 text-right w-20">Acción</th>
+                <th className="py-3 px-4 text-right w-24">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-200 font-sans">
               {filteredAliases.map((item, idx) => {
                 const catalogItem = getCatalogItemByCode(item.cod_arti);
+                const isItemBeingEdited = editingOriginalAlias === item.alias;
 
                 return (
-                  <tr key={`${item.alias}-${idx}`} className="hover:bg-neutral-50 transition-colors">
+                  <tr 
+                    key={`${item.alias}-${idx}`} 
+                    className={`transition-colors ${isItemBeingEdited ? 'bg-neutral-100/80 font-medium' : 'hover:bg-neutral-50'}`}
+                  >
                     <td className="py-3 px-4 text-center font-mono text-neutral-400 text-xs">
                       {idx + 1}
                     </td>
@@ -286,14 +360,24 @@ export const AliasManager: React.FC<AliasManagerProps> = ({
                     </td>
 
                     <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.alias)}
-                        className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-100 rounded transition-colors"
-                        title="Eliminar alias"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(item)}
+                          className="p-1.5 text-neutral-600 hover:text-black hover:bg-neutral-200 rounded transition-colors"
+                          title="Editar alias"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.alias)}
+                          className="p-1.5 text-neutral-400 hover:text-black hover:bg-neutral-200 rounded transition-colors"
+                          title="Eliminar alias"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
