@@ -182,54 +182,11 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
           </div>
         </div>
 
-        {/* AI Callout Banner if unresolved items exist */}
-        {unresolvedCount > 0 && (
-          <div className="p-4 sm:p-5 bg-neutral-100 border border-neutral-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-            <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-neutral-900 text-white flex items-center justify-center shrink-0">
-                <Bot className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold text-sm text-neutral-900">
-                    Agente de Homologación IA ({unresolvedCount} pendientes)
-                  </h4>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-200 text-neutral-800">
-                    Gemini Flash
-                  </span>
-                </div>
-                <p className="text-xs text-neutral-600 mt-0.5">
-                  Descifra automáticamente jergas complejas no encontradas en el inventario o alias.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onDecipherAllUnresolvedWithAI}
-              disabled={isDecipheringBatch || !hasAIKey}
-              className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {isDecipheringBatch ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Descifrando...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Descifrar todos con IA</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
         {/* Results Table Card */}
         <div className="bg-white rounded-xl border border-neutral-200/90 shadow-sm overflow-hidden">
           {/* Table Top Header / Filter Controls */}
           <div className="p-4 sm:px-5 border-b border-neutral-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-neutral-50/70">
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="font-bold text-base text-neutral-900">
                 Homologación & Verificación de Stock
               </span>
@@ -240,11 +197,32 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
                 <button
                   type="button"
                   onClick={onOpenAddItem}
-                  className="px-3 py-1 bg-neutral-900 hover:bg-black text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1 shadow-sm"
+                  className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1 shadow-sm"
                   title="Agregar artículo manualmente por código o descripción"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Agregar Artículo</span>
+                </button>
+              )}
+              {unresolvedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onDecipherAllUnresolvedWithAI}
+                  disabled={isDecipheringBatch || !hasAIKey}
+                  className="px-3 py-1.5 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  title="Descifrar todas las jergas pendientes con IA"
+                >
+                  {isDecipheringBatch ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Descifrando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Descifrar con IA ({unresolvedCount})</span>
+                    </>
+                  )}
                 </button>
               )}
             </div>

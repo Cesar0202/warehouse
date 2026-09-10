@@ -31,13 +31,13 @@ export const hasGeminiApiKey = (): boolean => {
   return getGeminiApiKey().length > 5;
 };
 
-// Optimized candidate Gemini models (fastest and most capable first)
+// Optimized candidate Gemini models for active Google AI Studio tier
 const CANDIDATE_MODELS = [
-  { version: 'v1beta', model: 'gemini-2.0-flash' },
-  { version: 'v1beta', model: 'gemini-1.5-flash' },
+  { version: 'v1beta', model: 'gemini-3.6-flash' },
+  { version: 'v1beta', model: 'gemini-3.5-flash' },
+  { version: 'v1beta', model: 'gemini-3.1-flash-lite' },
   { version: 'v1beta', model: 'gemini-flash-latest' },
-  { version: 'v1beta', model: 'gemini-2.5-flash' },
-  { version: 'v1', model: 'gemini-1.5-flash' }
+  { version: 'v1beta', model: 'gemma-4-26b-a4b-it' }
 ];
 
 let inMemoryWorkingModel: { version: string; model: string } | null = null;
@@ -106,6 +106,10 @@ async function callGeminiAPI(apiKey: string, promptText: string): Promise<string
       } else {
         const errJson = await res.json().catch(() => ({}));
         lastErrorMsg = errJson.error?.message || `Error ${res.status}: ${res.statusText}`;
+        // If model is busy (503), deprecated (404), rate-limited (429) or internal error (500), try next candidate
+        if (res.status === 404 || res.status === 429 || res.status === 500 || res.status === 503) {
+          continue;
+        }
         if (res.status === 400 && lastErrorMsg.includes('API key')) {
           throw new Error('API Key de Google Gemini inválida.');
         }
@@ -144,11 +148,17 @@ export const testGeminiApiKey = async (key: string): Promise<{ success: boolean;
 // Common technical slang synonyms to enrich search candidate retrieval
 const SYNONYM_MAP: Record<string, string[]> = {
   'plateada': ['aluminio', 'duct tape', 'galvanizado', 'inox', 'zincado', 'gris'],
+  'plateadas': ['aluminio', 'duct tape', 'galvanizado', 'inox', 'zincado', 'gris'],
   'plateado': ['aluminio', 'galvanizado', 'inox', 'zincado', 'duct tape', 'gris'],
+  'plateados': ['aluminio', 'galvanizado', 'inox', 'zincado', 'duct tape', 'gris'],
+  'cinta': ['cintas', 'aislante', 'aluminio', 'teflon', 'masking', 'vulcanizante'],
+  'cintas': ['cinta', 'aislante', 'aluminio', 'teflon', 'masking', 'vulcanizante'],
   'aluminio': ['plateada', 'plateado', 'cinta aluminio'],
   'negra': ['aislante', 'vulcanizante', 'pvc'],
+  'negras': ['aislante', 'vulcanizante', 'pvc'],
   'negro': ['aislante', 'vulcanizante', 'pvc'],
   'blanca': ['teflon', 'ptfe', 'selladora'],
+  'blancas': ['teflon', 'ptfe', 'selladora'],
   'blanco': ['teflon', 'ptfe'],
   'drano': ['desatorador', 'soda caustica', 'acido muriatico', 'sapolio'],
   'draino': ['desatorador', 'soda caustica', 'sapolio'],
@@ -157,11 +167,15 @@ const SYNONYM_MAP: Record<string, string[]> = {
   'huincha': ['cinta metrica', 'flexometro', 'cinta aislante'],
   'wincha': ['cinta metrica', 'flexometro', 'cinta aislante'],
   'desarmador': ['destornillador', 'plano', 'estrella', 'philips'],
+  'desarmadores': ['destornillador', 'plano', 'estrella'],
   'alicate': ['pinza', 'corte', 'universal', 'presion'],
+  'alicates': ['pinza', 'corte', 'universal', 'presion'],
   'perno': ['tornillo', 'hexagonal', 'autorroscante', 'esparrago'],
+  'pernos': ['tornillo', 'hexagonal', 'autorroscante', 'esparrago'],
   'chapon': ['desatorador', 'sopapo', 'bomba'],
   'chupon': ['desatorador', 'sopapo'],
   'caño': ['grifo', 'griferia', 'llave lavatorio', 'valvula'],
+  'caños': ['grifo', 'griferia', 'llave lavatorio', 'valvula'],
   'pico de loro': ['llave stilson', 'alicate extension', 'pinza bomba'],
   'francesa': ['llave inglesa', 'llave ajustable'],
   'inglesa': ['llave francesa', 'llave ajustable']
@@ -181,29 +195,48 @@ export const decipherTermWithAI = async (
 
   const allItems = getCatalogData();
   const lowerTerm = term.toLowerCase();
-  const words = lowerTerm.split(/\s+/).filter(w => w.length > 1 && !['de', 'para', 'el', 'la', 'un', 'una', 'con', 'sin', 'los', 'las'].includes(w));
+  const rawWords = lowerTerm.split(/\s+/).filter(w => w.length > 1 && !['de', 'para', 'el', 'la', 'un', 'una', 'con', 'sin', 'los', 'las'].includes(w));
+  
+  // Stemming: include singular / base forms
+  const searchTokens = new Set<string>();
+  rawWords.forEach(w => {
+    searchTokens.add(w);
+    if (w.endsWith('es') && w.length > 4) {
+      searchTokens.add(w.slice(0, -2));
+    } else if (w.endsWith('s') && w.length > 3) {
+      searchTokens.add(w.slice(0, -1));
+    }
+  });
+
   const candidateMap = new Map<string, CatalogItem>();
 
-  // 1. Direct and fuzzy search with the original term
+  // 1. Direct and fuzzy search with the original term and singular version
   const termMatches = searchCatalogFuzzy(term, 30);
   termMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
 
+  const singularTerm = Array.from(searchTokens).join(' ');
+  if (singularTerm !== term) {
+    const singularMatches = searchCatalogFuzzy(singularTerm, 30);
+    singularMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
+  }
+
   // 2. Individual word fuzzy matches
-  words.forEach(w => {
+  searchTokens.forEach(w => {
     const wordMatches = searchCatalogFuzzy(w, 20);
     wordMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
   });
 
   // 3. Synonym & attribute expansions
-  words.forEach(w => {
+  searchTokens.forEach(w => {
     const synonyms = SYNONYM_MAP[w] || [];
     synonyms.forEach(syn => {
       const synMatches = searchCatalogFuzzy(syn, 20);
       synMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
 
-      // Also search combination of first word + synonym (e.g. "cinta aluminio")
-      if (words.length > 0 && words[0] !== w) {
-        const comboMatches = searchCatalogFuzzy(`${words[0]} ${syn}`, 20);
+      // Also search combination of base word + synonym (e.g. "cinta aluminio")
+      const firstToken = Array.from(searchTokens)[0];
+      if (firstToken && firstToken !== w) {
+        const comboMatches = searchCatalogFuzzy(`${firstToken} ${syn}`, 20);
         comboMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
       }
     });
