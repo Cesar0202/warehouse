@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, X, Check, Plus, Package } from 'lucide-react';
 import { CatalogItem, ParsedLineResult } from '../types';
 import { searchCatalogFuzzy, getCatalogData } from '../services/catalogService';
@@ -158,8 +158,19 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
                 type="number"
                 min="1"
                 step="1"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseFloat(e.target.value) || 1))}
+                value={quantity === 0 ? '' : quantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setQuantity(0);
+                  } else {
+                    const num = parseInt(val, 10);
+                    setQuantity(isNaN(num) ? 0 : Math.max(0, num));
+                  }
+                }}
+                onBlur={() => {
+                  if (!quantity || quantity < 1) setQuantity(1);
+                }}
                 className="w-20 text-center py-1.5 px-2 bg-white border border-neutral-300 rounded-lg text-xs font-mono font-bold text-neutral-900 outline-none focus:border-neutral-900"
               />
             </div>

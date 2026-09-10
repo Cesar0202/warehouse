@@ -133,8 +133,17 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
               <input
                 type="number"
                 min="0"
-                value={stock}
-                onChange={(e) => setStock(Math.max(0, parseInt(e.target.value) || 0))}
+                value={stock === 0 ? '' : stock}
+                placeholder="0"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '') {
+                    setStock(0);
+                  } else {
+                    const num = parseInt(val, 10);
+                    setStock(isNaN(num) ? 0 : Math.max(0, num));
+                  }
+                }}
                 className="w-24 text-center py-2 bg-white border-2 border-neutral-900 rounded-lg text-xl font-bold font-mono text-neutral-900 focus:outline-none"
               />
 

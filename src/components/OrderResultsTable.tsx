@@ -366,10 +366,20 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
                           type="number"
                           min="1"
                           step="1"
-                          value={row.requestedQty}
+                          value={row.requestedQty === 0 ? '' : row.requestedQty}
                           onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 1;
-                            onUpdateResult(row.id, { requestedQty: val });
+                            const val = e.target.value;
+                            if (val === '') {
+                              onUpdateResult(row.id, { requestedQty: 0 });
+                            } else {
+                              const num = parseFloat(val);
+                              onUpdateResult(row.id, { requestedQty: isNaN(num) ? 0 : Math.max(0, num) });
+                            }
+                          }}
+                          onBlur={() => {
+                            if (!row.requestedQty || row.requestedQty < 1) {
+                              onUpdateResult(row.id, { requestedQty: 1 });
+                            }
                           }}
                           className="w-16 text-center py-1 px-1.5 border border-neutral-300 rounded-lg bg-white text-neutral-900 font-mono font-bold text-xs outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                         />
