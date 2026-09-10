@@ -356,6 +356,7 @@ export function App() {
                     setInputText={setInputText}
                     onProcessOrder={handleProcessOrder}
                     isProcessing={isProcessing}
+                    onOpenAddItem={() => setAddItemModalOpen(true)}
                   />
                 </div>
 

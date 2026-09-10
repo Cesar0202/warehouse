@@ -1,10 +1,10 @@
-import React from 'react';
 import { 
   Play, 
   Trash2, 
   ClipboardPaste, 
   ArrowRight,
-  MessageSquareQuote
+  MessageSquareQuote,
+  Plus
 } from 'lucide-react';
 
 interface OrderInputProps {
@@ -12,13 +12,15 @@ interface OrderInputProps {
   setInputText: (text: string) => void;
   onProcessOrder: () => void;
   isProcessing: boolean;
+  onOpenAddItem?: () => void;
 }
 
 export const OrderInput: React.FC<OrderInputProps> = ({
   inputText,
   setInputText,
   onProcessOrder,
-  isProcessing
+  isProcessing,
+  onOpenAddItem
 }) => {
   const lineCount = inputText.trim() ? inputText.split(/\r?\n/).filter(l => l.trim().length > 0).length : 0;
 
@@ -56,7 +58,19 @@ export const OrderInput: React.FC<OrderInputProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenAddItem && (
+            <button
+              type="button"
+              onClick={onOpenAddItem}
+              className="px-3.5 py-1.5 bg-neutral-900 hover:bg-black text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 shadow-sm"
+              title="Buscar y agregar artículo directamente por código o nombre"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Agregar Artículo</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handlePasteClipboard}
@@ -84,7 +98,7 @@ export const OrderInput: React.FC<OrderInputProps> = ({
         <textarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder={`Pega aquí el pedido técnico...`}
+          placeholder={`Pega aquí el pedido técnico o usa "+ Agregar Artículo" para buscar en el inventario...`}
           rows={6}
           className="w-full p-4 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-900 text-xs sm:text-sm font-mono placeholder:text-neutral-400 focus:bg-white focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 outline-none transition-all resize-y leading-relaxed"
         />
@@ -96,13 +110,26 @@ export const OrderInput: React.FC<OrderInputProps> = ({
         )}
       </div>
 
-      {/* Bottom Bar: Process Button */}
-      <div className="flex items-center justify-end pt-1">
+      {/* Bottom Bar: Process Button & Direct Add Link */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+        <div>
+          {onOpenAddItem && (
+            <button
+              type="button"
+              onClick={onOpenAddItem}
+              className="text-xs font-semibold text-neutral-700 hover:text-black flex items-center gap-1.5 underline underline-offset-4"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>¿Quieres armar la lista buscando ítem por ítem? Clic aquí</span>
+            </button>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={handleProcess}
           disabled={!inputText.trim() || isProcessing}
-          className="px-6 py-2.5 bg-neutral-900 hover:bg-black active:scale-98 disabled:opacity-40 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
+          className="w-full sm:w-auto px-6 py-2.5 bg-neutral-900 hover:bg-black active:scale-98 disabled:opacity-40 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
         >
           {isProcessing ? (
             <>
