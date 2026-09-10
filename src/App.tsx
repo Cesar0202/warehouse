@@ -169,10 +169,10 @@ export function App() {
     }
   };
 
-  // AI Agent: Decipher All Unresolved Batch
+  // AI Agent: Decipher All Unresolved Batch in Parallel
   const handleDecipherAllUnresolvedWithAI = async () => {
     if (!hasAIKey) {
-      showToast('warning', 'API Key no configurada', 'Coloca VITE_GEMINI_API_KEY en tu archivo .env.');
+      showToast('warning', 'API Key no configurada', 'Coloca VITE_GEMINI_API_KEY en tu archivo .env o en Configuración IA.');
       return;
     }
 
@@ -185,26 +185,33 @@ export function App() {
     setIsDecipheringBatch(true);
     let resolvedCount = 0;
 
-    for (const line of unresolved) {
-      try {
-        handleUpdateLineResult(line.id, { isDecipheringAI: true });
-        const suggestion = await decipherTermWithAI(line.detectedTerm, line.rawLine);
-        const catalogItem = getCatalogItemByCode(suggestion.cod_arti);
+    // Process up to 3 concurrent requests at a time for high speed without rate-limiting
+    const concurrency = 3;
+    for (let i = 0; i < unresolved.length; i += concurrency) {
+      const chunk = unresolved.slice(i, i + concurrency);
+      await Promise.all(
+        chunk.map(async (line) => {
+          try {
+            handleUpdateLineResult(line.id, { isDecipheringAI: true });
+            const suggestion = await decipherTermWithAI(line.detectedTerm, line.rawLine);
+            const catalogItem = getCatalogItemByCode(suggestion.cod_arti);
 
-        handleUpdateLineResult(line.id, {
-          isDecipheringAI: false,
-          aiSuggestion: suggestion,
-          matchedItem: catalogItem || line.matchedItem,
-          confidenceLevel: suggestion.confianza >= 80 ? 'high' : 'medium',
-          matchScore: suggestion.confianza,
-          matchType: 'ai_agent',
-          selected: true
-        });
-        resolvedCount++;
-      } catch (err) {
-        console.warn(`Error resolving line "${line.detectedTerm}":`, err);
-        handleUpdateLineResult(line.id, { isDecipheringAI: false });
-      }
+            handleUpdateLineResult(line.id, {
+              isDecipheringAI: false,
+              aiSuggestion: suggestion,
+              matchedItem: catalogItem || line.matchedItem,
+              confidenceLevel: suggestion.confianza >= 80 ? 'high' : 'medium',
+              matchScore: suggestion.confianza,
+              matchType: 'ai_agent',
+              selected: true
+            });
+            resolvedCount++;
+          } catch (err) {
+            console.warn(`Error resolving line "${line.detectedTerm}":`, err);
+            handleUpdateLineResult(line.id, { isDecipheringAI: false });
+          }
+        })
+      );
     }
 
     setIsDecipheringBatch(false);

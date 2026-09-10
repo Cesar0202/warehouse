@@ -2,6 +2,7 @@ import { AISuggestion, CatalogItem } from '../types';
 import { getCatalogData, searchCatalogFuzzy, getCatalogItemByCode } from './catalogService';
 
 const API_KEY_STORAGE_KEY = 'app_gemini_api_key_v1';
+const WORKING_MODEL_STORAGE_KEY = 'app_gemini_working_model_v2';
 
 export const getGeminiApiKey = (): string => {
   // Priority 1: Environment variable (.env / Vercel env)
@@ -20,6 +21,7 @@ export const getGeminiApiKey = (): string => {
 export const setGeminiApiKey = (key: string): void => {
   if (!key.trim()) {
     localStorage.removeItem(API_KEY_STORAGE_KEY);
+    localStorage.removeItem(WORKING_MODEL_STORAGE_KEY);
   } else {
     localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
   }
@@ -29,24 +31,46 @@ export const hasGeminiApiKey = (): boolean => {
   return getGeminiApiKey().length > 5;
 };
 
-// Candidate Gemini models compatible with current Google API versions
+// Optimized candidate Gemini models (fastest and most capable first)
 const CANDIDATE_MODELS = [
-  { version: 'v1beta', model: 'gemini-3.5-flash' },
-  { version: 'v1beta', model: 'gemini-3.5-flash-lite' },
-  { version: 'v1beta', model: 'gemini-3.6-flash' },
-  { version: 'v1beta', model: 'gemini-3.7-flash' },
+  { version: 'v1beta', model: 'gemini-2.0-flash' },
+  { version: 'v1beta', model: 'gemini-1.5-flash' },
   { version: 'v1beta', model: 'gemini-flash-latest' },
-  { version: 'v1beta', model: 'gemma-4-26b-a4b-it' },
-  { version: 'v1', model: 'gemini-3.5-flash' }
+  { version: 'v1beta', model: 'gemini-2.5-flash' },
+  { version: 'v1', model: 'gemini-1.5-flash' }
 ];
 
+let inMemoryWorkingModel: { version: string; model: string } | null = null;
+
+// Initialize cached working model from localStorage
+try {
+  const savedModel = localStorage.getItem(WORKING_MODEL_STORAGE_KEY);
+  if (savedModel) {
+    inMemoryWorkingModel = JSON.parse(savedModel);
+  }
+} catch {
+  // ignore
+}
+
 /**
- * Execute Gemini API request trying available models
+ * Execute Gemini API request trying available models with instant caching for maximum speed
  */
 async function callGeminiAPI(apiKey: string, promptText: string): Promise<string> {
+  const modelsToTry: { version: string; model: string }[] = [];
+
+  if (inMemoryWorkingModel) {
+    modelsToTry.push(inMemoryWorkingModel);
+  }
+
+  for (const m of CANDIDATE_MODELS) {
+    if (!modelsToTry.some(existing => existing.model === m.model && existing.version === m.version)) {
+      modelsToTry.push(m);
+    }
+  }
+
   let lastErrorMsg = '';
 
-  for (const { version, model } of CANDIDATE_MODELS) {
+  for (const { version, model } of modelsToTry) {
     const endpoint = `https://generativelanguage.googleapis.com/${version}/models/${model}:generateContent?key=${apiKey.trim()}`;
     try {
       const res = await fetch(endpoint, {
@@ -59,7 +83,8 @@ async function callGeminiAPI(apiKey: string, promptText: string): Promise<string
             }
           ],
           generationConfig: {
-            temperature: 0.1,
+            temperature: 0.0,
+            maxOutputTokens: 250,
             responseMimeType: 'application/json'
           }
         })
@@ -68,26 +93,32 @@ async function callGeminiAPI(apiKey: string, promptText: string): Promise<string
       if (res.ok) {
         const data = await res.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text;
+        if (text) {
+          // Cache this working model for instant zero-latency future calls
+          inMemoryWorkingModel = { version, model };
+          try {
+            localStorage.setItem(WORKING_MODEL_STORAGE_KEY, JSON.stringify(inMemoryWorkingModel));
+          } catch {
+            // ignore
+          }
+          return text;
+        }
       } else {
         const errJson = await res.json().catch(() => ({}));
         lastErrorMsg = errJson.error?.message || `Error ${res.status}: ${res.statusText}`;
-        if (res.status === 404 || res.status === 429) {
-          continue;
-        }
-        if (res.status === 400 || res.status === 403) {
-          throw new Error(lastErrorMsg);
+        if (res.status === 400 && lastErrorMsg.includes('API key')) {
+          throw new Error('API Key de Google Gemini inválida.');
         }
       }
     } catch (err: any) {
-      if (err.message && !err.message.includes('404')) {
+      if (err.message && err.message.includes('API key')) {
         throw err;
       }
       lastErrorMsg = err.message || 'Error de conexión';
     }
   }
 
-  throw new Error(lastErrorMsg || 'No se pudo conectar con los modelos disponibles de Google Gemini. Verifica tu API Key.');
+  throw new Error(lastErrorMsg || 'No se pudo conectar con los modelos de Google Gemini. Verifica tu conexión y API Key.');
 }
 
 /**
@@ -99,7 +130,7 @@ export const testGeminiApiKey = async (key: string): Promise<{ success: boolean;
   try {
     const text = await callGeminiAPI(key, 'Responde con {"status": "OK"}');
     if (text) {
-      return { success: true, message: '¡Conexión exitosa con Google Gemini!' };
+      return { success: true, message: '¡Conexión exitosa y ultrarrápida con Google Gemini!' };
     }
     return { success: false, message: 'Respuesta vacía del servidor.' };
   } catch (error: any) {
@@ -110,8 +141,34 @@ export const testGeminiApiKey = async (key: string): Promise<{ success: boolean;
   }
 };
 
+// Common technical slang synonyms to enrich search candidate retrieval
+const SYNONYM_MAP: Record<string, string[]> = {
+  'plateada': ['aluminio', 'duct tape', 'galvanizado', 'inox', 'zincado', 'gris'],
+  'plateado': ['aluminio', 'galvanizado', 'inox', 'zincado', 'duct tape', 'gris'],
+  'aluminio': ['plateada', 'plateado', 'cinta aluminio'],
+  'negra': ['aislante', 'vulcanizante', 'pvc'],
+  'negro': ['aislante', 'vulcanizante', 'pvc'],
+  'blanca': ['teflon', 'ptfe', 'selladora'],
+  'blanco': ['teflon', 'ptfe'],
+  'drano': ['desatorador', 'soda caustica', 'acido muriatico', 'sapolio'],
+  'draino': ['desatorador', 'soda caustica', 'sapolio'],
+  'franks': ['abrazadera', 'caddy', 'soporte'],
+  'frank': ['abrazadera', 'caddy', 'soporte'],
+  'huincha': ['cinta metrica', 'flexometro', 'cinta aislante'],
+  'wincha': ['cinta metrica', 'flexometro', 'cinta aislante'],
+  'desarmador': ['destornillador', 'plano', 'estrella', 'philips'],
+  'alicate': ['pinza', 'corte', 'universal', 'presion'],
+  'perno': ['tornillo', 'hexagonal', 'autorroscante', 'esparrago'],
+  'chapon': ['desatorador', 'sopapo', 'bomba'],
+  'chupon': ['desatorador', 'sopapo'],
+  'caño': ['grifo', 'griferia', 'llave lavatorio', 'valvula'],
+  'pico de loro': ['llave stilson', 'alicate extension', 'pinza bomba'],
+  'francesa': ['llave inglesa', 'llave ajustable'],
+  'inglesa': ['llave francesa', 'llave ajustable']
+};
+
 /**
- * Decipher an unrecognized or ambiguous technical slang using Gemini AI
+ * Decipher an unrecognized or ambiguous technical slang using Gemini AI with ultra-targeted candidate retrieval
  */
 export const decipherTermWithAI = async (
   term: string,
@@ -119,53 +176,97 @@ export const decipherTermWithAI = async (
 ): Promise<AISuggestion> => {
   const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    throw new Error('No se ha detectado la clave VITE_GEMINI_API_KEY en el archivo .env. Por favor configúrala para habilitar el descifrado automático.');
+    throw new Error('No se ha detectado la clave VITE_GEMINI_API_KEY. Configúrala en .env o en Configuración IA.');
   }
 
-  // 1. Gather relevant candidate products from the 4,337 inventory items
   const allItems = getCatalogData();
-  const words = term.split(/\s+/).filter(w => w.length > 2);
+  const lowerTerm = term.toLowerCase();
+  const words = lowerTerm.split(/\s+/).filter(w => w.length > 1 && !['de', 'para', 'el', 'la', 'un', 'una', 'con', 'sin', 'los', 'las'].includes(w));
   const candidateMap = new Map<string, CatalogItem>();
 
-  // Fuzzy candidates
-  const fuzzy = searchCatalogFuzzy(term, 20);
-  fuzzy.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
+  // 1. Direct and fuzzy search with the original term
+  const termMatches = searchCatalogFuzzy(term, 30);
+  termMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
 
-  // Word-based candidates
-  words.forEach(word => {
-    const wordFuzzy = searchCatalogFuzzy(word, 8);
-    wordFuzzy.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
+  // 2. Individual word fuzzy matches
+  words.forEach(w => {
+    const wordMatches = searchCatalogFuzzy(w, 20);
+    wordMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
   });
 
-  if (candidateMap.size < 10) {
-    allItems.slice(0, 30).forEach(i => candidateMap.set(i.cod_arti, i));
+  // 3. Synonym & attribute expansions
+  words.forEach(w => {
+    const synonyms = SYNONYM_MAP[w] || [];
+    synonyms.forEach(syn => {
+      const synMatches = searchCatalogFuzzy(syn, 20);
+      synMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
+
+      // Also search combination of first word + synonym (e.g. "cinta aluminio")
+      if (words.length > 0 && words[0] !== w) {
+        const comboMatches = searchCatalogFuzzy(`${words[0]} ${syn}`, 20);
+        comboMatches.forEach(f => candidateMap.set(f.item.cod_arti, f.item));
+      }
+    });
+  });
+
+  // 4. Family-based enrichment: If matches contain specific families (e.g., CINTAS, TUBERIAS), pull representative items
+  const matchedFamilies = new Set<string>();
+  candidateMap.forEach(item => {
+    if (item.familia) matchedFamilies.add(item.familia);
+  });
+
+  if (matchedFamilies.size > 0) {
+    for (const item of allItems) {
+      if (item.familia && matchedFamilies.has(item.familia)) {
+        if (!candidateMap.has(item.cod_arti) && candidateMap.size < 90) {
+          candidateMap.set(item.cod_arti, item);
+        }
+      }
+    }
   }
 
-  const candidateList = Array.from(candidateMap.values()).slice(0, 35).map(c => ({
+  // Fallback if very few candidates
+  if (candidateMap.size < 10) {
+    allItems.slice(0, 40).forEach(i => candidateMap.set(i.cod_arti, i));
+  }
+
+  // Prepare clean compact candidate list (up to 90 items)
+  const candidateList = Array.from(candidateMap.values()).slice(0, 90).map(c => ({
     cod_arti: c.cod_arti,
     descripcion: c.descripcion,
-    familia: c.familia,
+    familia: c.familia || '',
     stock: c.stock,
-    unidad: c.unidad
+    unidad: c.unidad || 'UND'
   }));
 
   const systemInstruction = `
 Eres un especialista técnico en suministros industriales, ferretería, fontanería, electricidad y construcción.
-Tu objetivo es analizar la jerga técnica, modismo o descripción imprecisa enviada por un técnico de campo y relacionarla con el artículo correspondiente en el catálogo oficial de inventario de la empresa.
+Tu tarea es mapear la jerga técnica, modismo o descripción imprecisa enviada por un técnico al artículo EXACTO o MÁS CERCANO del catálogo oficial.
 
 Contexto del Pedido:
 - Mensaje original: "${rawLine}"
 - Término detectado: "${term}"
 
-Muestra de artículos candidatos en inventario:
-${JSON.stringify(candidateList, null, 2)}
+Reglas Técnicas Clave:
+1. "cinta plateada" o "cinta ducto/gris" -> CINTA DE ALUMINIO o CINTA MULTIPROPÓSITO / DUCT TAPE.
+2. "cinta negra" -> CINTA AISLANTE / VULCANIZANTE.
+3. "cinta blanca / teflon" -> CINTA TEFLÓN.
+4. "drano / diablo rojo" -> DESATORADOR / SODA CÁUSTICA.
+5. "huincha / wincha" -> CINTA MÉTRICA o CINTA AISLANTE según el contexto.
+6. "desarmador" -> DESTORNILLADOR.
+7. "franks" -> ABRAZADERAS.
+8. Elige SIEMPRE el mejor "cod_arti" de la lista de candidatos adjunta.
+9. REGLA ESTRICTA: La "explicacion" DEBE tener MÁXIMO 1 O 2 LÍNEAS (máximo 20 palabras), clara y sin redundancias.
 
-Responde ÚNICAMENTE con un objeto JSON válido (sin formato markdown exterior) con la siguiente estructura exacta:
+Candidatos en inventario:
+${JSON.stringify(candidateList, null, 1)}
+
+Responde ÚNICAMENTE con un JSON con este formato exacto:
 {
-  "cod_arti": "CÓDIGO_OFICIAL",
+  "cod_arti": "CÓDIGO_DEL_CATÁLOGO",
   "descripcion": "DESCRIPCIÓN_OFICIAL",
-  "explicacion": "Explicación técnica concisa de la equivalencia",
-  "confianza": 85,
+  "explicacion": "Explicación técnica concisa en 1 o 2 líneas.",
+  "confianza": 95,
   "alias_sugerido": "término normalizado para guardar como alias"
 }
 `;
@@ -188,3 +289,4 @@ Responde ÚNICAMENTE con un objeto JSON válido (sin formato markdown exterior) 
 
   return parsed;
 };
+

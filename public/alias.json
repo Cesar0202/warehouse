@@ -80,9 +80,24 @@
     "nota": "Cinta aislante eléctrica"
   },
   {
+    "alias": "cinta plateada",
+    "cod_arti": "CIN02",
+    "nota": "Cinta de aluminio / Duct tape"
+  },
+  {
+    "alias": "cinta de aluminio",
+    "cod_arti": "CIN02",
+    "nota": "Cinta de aluminio"
+  },
+  {
+    "alias": "cinta gris",
+    "cod_arti": "CIN02",
+    "nota": "Cinta de aluminio / multipropósito"
+  },
+  {
     "alias": "cinta 3m",
     "cod_arti": "CIN02",
-    "nota": "Cinta aislante 3M / Vulcanizante"
+    "nota": "Cinta 3M / Aluminio"
   },
   {
     "alias": "cinta vulcanizante",
