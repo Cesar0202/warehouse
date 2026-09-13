@@ -167,17 +167,67 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       return resultsList.slice(0, 60);
     }
 
+const POPULAR_PRIORITY_CODES = [
+  'CIN08', // Cinta teflon
+  'CIN01', // Cinta aislante negra
+  'CIN02', // Cinta aluminio
+  'DES01', // Desatorador Sapolio
+  'TRAP01', // Trapo blanco
+  'TRAP02', // Trapo color
+  'PEG01', // Pegamento PVC
+  'SIL01', // Silicona
+  'CUR06', // Curva 3/4"
+  'CUR09', // Curva 1/2"
+  'CUR07', // Curva 1"
+  'UNI47', // Union conduit 1
+  'BRA01', // Abrazadera
+  'PER01'  // Perno
+];
+
     if (selectedCategory !== 'TODOS') {
       const famKey = selectedCategory.split('=')[1] || selectedCategory;
       return currentCatalog.filter((i) => (i.familia || '').toUpperCase().includes(famKey)).slice(0, 60);
     }
 
-    // Default view: show catalog items with stock or first batch
-    const inStock = currentCatalog.filter((i) => i.stock > 0);
-    if (inStock.length > 0) {
-      return inStock.slice(0, 48);
-    }
-    return currentCatalog.slice(0, 48);
+    // Default view: Prioritize the most requested/popular items
+    const aliasCodes = new Set(allAliases.map((a) => a.cod_arti.toUpperCase().trim()));
+    const sorted = [...currentCatalog].sort((a, b) => {
+      const codeA = a.cod_arti.toUpperCase().trim();
+      const codeB = b.cod_arti.toUpperCase().trim();
+      const descA = a.descripcion.toLowerCase();
+      const descB = b.descripcion.toLowerCase();
+
+      const idxA = POPULAR_PRIORITY_CODES.indexOf(codeA);
+      const idxB = POPULAR_PRIORITY_CODES.indexOf(codeB);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+
+      let scoreA = 0;
+      let scoreB = 0;
+      if (aliasCodes.has(codeA)) scoreA += 200;
+      if (aliasCodes.has(codeB)) scoreB += 200;
+
+      if (descA.includes('cinta')) scoreA += 100;
+      if (descB.includes('cinta')) scoreB += 100;
+      if (descA.includes('teflon') || descA.includes('aislante')) scoreA += 90;
+      if (descB.includes('teflon') || descB.includes('aislante')) scoreB += 90;
+      if (descA.includes('trapo')) scoreA += 80;
+      if (descB.includes('trapo')) scoreB += 80;
+      if (descA.includes('desatorador')) scoreA += 75;
+      if (descB.includes('desatorador')) scoreB += 75;
+      if (descA.includes('silicona') || descA.includes('pegamento')) scoreA += 70;
+      if (descB.includes('silicona') || descB.includes('pegamento')) scoreB += 70;
+      if (descA.includes('curva') || descA.includes('tubo')) scoreA += 50;
+      if (descB.includes('curva') || descB.includes('tubo')) scoreB += 50;
+
+      if (a.stock > 0) scoreA += 10;
+      if (b.stock > 0) scoreB += 10;
+
+      return scoreB - scoreA;
+    });
+
+    return sorted.slice(0, 48);
   }, [searchTerm, selectedCategory, internalCatalog]);
 
   const getItemQuantityInCart = (codArti: string): number => {
@@ -279,13 +329,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans pb-32">
       {/* Top Header */}
       <header className="sticky top-0 z-30 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-800 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
-          <div className="flex items-center justify-between gap-3">
-            {/* Logo / Tech Info */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Logo / Title */}
             <div className="flex items-center gap-3">
               <div
                 onClick={handleSecretTripleTap}
-                className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center shadow-inner cursor-pointer select-none"
+                className="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 text-white flex items-center justify-center shadow-inner cursor-pointer select-none shrink-0"
                 title="Materiales"
               >
                 <Wrench className="w-5 h-5 text-neutral-200" />
@@ -293,53 +343,65 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               <div>
                 <h1
                   onClick={handleSecretTripleTap}
-                  className="text-base font-bold tracking-tight text-white leading-tight select-none cursor-pointer"
+                  className="text-base sm:text-lg font-bold tracking-tight text-white leading-tight select-none cursor-pointer"
                 >
                   Solicitud de Materiales
                 </h1>
-                <div className="flex items-center gap-1.5 text-xs text-neutral-400 mt-0.5">
-                  <User className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Técnico:</span>
-                  {isEditingName ? (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSaveName(techName);
-                      }}
-                      className="flex items-center gap-1"
-                    >
-                      <input
-                        type="text"
-                        value={techName}
-                        onChange={(e) => setTechName(e.target.value)}
-                        placeholder="Tu nombre..."
-                        autoFocus
-                        className="w-32 px-2 py-0.5 bg-neutral-800 border border-neutral-600 rounded text-xs text-white outline-none focus:border-white"
-                      />
-                      <button
-                        type="submit"
-                        className="p-1 bg-white text-black hover:bg-neutral-200 rounded text-xs font-bold cursor-pointer"
-                        title="Guardar nombre"
-                      >
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </button>
-                    </form>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingName(true)}
-                      className="font-semibold text-white underline underline-offset-2 hover:text-neutral-300 cursor-pointer"
-                    >
-                      {techName || 'Ingresar nombre'}
-                    </button>
-                  )}
-                </div>
+                <p className="text-[11px] text-neutral-400">
+                  Catálogo rápido para técnicos en campo
+                </p>
               </div>
+            </div>
+
+            {/* Prominent Technician Name Box */}
+            <div className="bg-neutral-800/95 border border-neutral-700 rounded-xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-2.5 shadow-sm">
+              <div className="flex items-center gap-2 text-xs sm:text-sm">
+                <User className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="text-neutral-400 font-medium">Técnico:</span>
+              </div>
+              {isEditingName ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSaveName(techName);
+                  }}
+                  className="flex items-center gap-1.5 flex-1 max-w-xs"
+                >
+                  <input
+                    type="text"
+                    value={techName}
+                    onChange={(e) => setTechName(e.target.value)}
+                    placeholder="Escribe tu nombre..."
+                    autoFocus
+                    className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-600 rounded-lg text-xs sm:text-sm font-semibold text-white outline-none focus:border-white"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                    title="Guardar nombre"
+                  >
+                    Guardar
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingName(true)}
+                  className="flex items-center gap-2 font-bold text-sm text-white hover:text-neutral-200 cursor-pointer"
+                >
+                  <span className="text-sm sm:text-base font-extrabold text-white">
+                    {techName || 'Toca aquí para poner tu nombre'}
+                  </span>
+                  <span className="text-xs text-emerald-400 font-medium underline underline-offset-2">
+                    (Cambiar)
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Search Input */}
-          <div className="mt-3.5 sm:mt-4">
+          <div>
             <div className="relative">
               <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3.5" />
               <input
@@ -384,15 +446,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-4">
         {/* Results Header */}
-        <div className="flex items-center justify-between text-xs text-neutral-400 px-1">
-          <span>
-            {searchTerm
-              ? `Resultados para "${searchTerm}" (${searchResults.length} artículos)`
-              : `Catálogo de Materiales (${searchResults.length} artículos disponibles)`}
+        <div className="flex items-center justify-between text-xs sm:text-sm text-neutral-400 px-1">
+          <span className="font-bold text-neutral-200">
+            {searchTerm ? `Resultados para "${searchTerm}"` : 'Materiales Más Solicitados'}
           </span>
           {cart.length > 0 && (
-            <span className="text-emerald-400 font-semibold font-mono">
-              {cart.length} en lista ({totalItemsCount} unid.)
+            <span className="text-emerald-400 font-semibold font-mono text-xs">
+              {cart.length} en carrito ({totalItemsCount} unid.)
             </span>
           )}
         </div>
