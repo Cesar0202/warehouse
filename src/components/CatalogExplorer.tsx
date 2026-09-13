@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, updateProductStock } from '../services/catalogService';
+import { getProductImageUrl } from '../services/imageHelper';
 import { CustomExportModal } from './CustomExportModal';
 
 interface CatalogExplorerProps {
@@ -434,16 +435,29 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                       </div>
                     </td>
 
-                    {/* Description */}
+                    {/* Description & Photo */}
                     <td className="py-3 px-3">
-                      <p 
-                        onClick={() => onOpenDetailDrawer(item)}
-                        className="font-semibold text-neutral-900 cursor-pointer hover:underline leading-snug"
-                      >
-                        {item.descripcion}
-                      </p>
-                      <div className="flex items-center gap-2 text-[11px] text-neutral-500 mt-0.5 font-mono">
-                        <span>Unidad: {item.unidad || 'UND'}</span>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={getProductImageUrl(item)}
+                          alt={item.descripcion}
+                          className="w-9 h-9 rounded-lg object-cover border border-neutral-200 bg-neutral-100 shrink-0"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=300&auto=format&fit=crop&q=80';
+                          }}
+                        />
+                        <div className="min-w-0">
+                          <p 
+                            onClick={() => onOpenDetailDrawer(item)}
+                            className="font-semibold text-neutral-900 cursor-pointer hover:underline leading-snug truncate max-w-md"
+                          >
+                            {item.descripcion}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-neutral-500 mt-0.5 font-mono">
+                            <span>Unidad: {item.unidad || 'UND'}</span>
+                          </div>
+                        </div>
                       </div>
                     </td>
 

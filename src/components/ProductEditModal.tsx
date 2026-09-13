@@ -8,10 +8,12 @@ import {
   Package, 
   MapPin, 
   Tag, 
-  FolderTree
+  FolderTree,
+  Image as ImageIcon
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { updateProductDetails } from '../services/catalogService';
+import { getProductImageUrl } from '../services/imageHelper';
 
 interface ProductEditModalProps {
   isOpen: boolean;
@@ -33,6 +35,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [familia, setFamilia] = useState('');
   const [unidad, setUnidad] = useState('');
   const [ubicacion, setUbicacion] = useState('');
+  const [foto, setFoto] = useState('');
 
   useEffect(() => {
     if (product) {
@@ -41,6 +44,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       setFamilia(product.familia || '');
       setUnidad(product.unidad || '007=UNIDAD (BIENES)');
       setUbicacion(product.ubicacion || '');
+      setFoto(product.foto || product.imagen || product.image_url || '');
     }
   }, [product, isOpen]);
 
@@ -59,7 +63,8 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       familia: familia.trim(),
       unidad: unidad.trim(),
       ubicacion: ubicacion.trim(),
-      stock: Number(stock) || 0
+      stock: Number(stock) || 0,
+      foto: foto.trim()
     });
 
     if (updated) {
@@ -217,6 +222,40 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
               placeholder="Ej: ESTANTE-A3, PASILLO-2..."
               className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 text-xs focus:bg-white focus:border-neutral-900 outline-none transition-all"
             />
+          </div>
+
+          {/* Photo URL */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+                Foto del Producto (URL Imagen)
+              </label>
+              <span className="text-[10px] text-neutral-400">Opcional</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-xl border border-neutral-300 bg-neutral-100 overflow-hidden shrink-0 flex items-center justify-center">
+                <img
+                  src={foto.trim() || getProductImageUrl(product)}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=300&auto=format&fit=crop&q=80';
+                  }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <input
+                  type="url"
+                  value={foto}
+                  onChange={(e) => setFoto(e.target.value)}
+                  placeholder="https://ejemplo.com/foto-producto.jpg"
+                  className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 text-xs focus:bg-white focus:border-neutral-900 outline-none transition-all font-mono text-[11px]"
+                />
+                <p className="text-[10px] text-neutral-400 mt-1">
+                  Pega el link de la foto del artículo para que el técnico lo vea al pedir.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Footer actions */}

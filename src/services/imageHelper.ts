@@ -35,7 +35,11 @@ const CATEGORY_IMAGES: Record<string, string> = {
   'griferia': 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=300&auto=format&fit=crop&q=80'
 };
 
-export const getProductImageUrl = (item: CatalogItem | { descripcion: string; cod_arti: string; familia?: string }): string => {
+export const getProductImageUrl = (item: CatalogItem | { descripcion: string; cod_arti: string; familia?: string; foto?: string; imagen?: string; image_url?: string }): string => {
+  if (item.foto && item.foto.trim()) return item.foto.trim();
+  if (item.imagen && item.imagen.trim()) return item.imagen.trim();
+  if (item.image_url && item.image_url.trim()) return item.image_url.trim();
+
   const desc = item.descripcion.toLowerCase();
   const cod = item.cod_arti.toUpperCase();
   const fam = (item.familia || '').toUpperCase();

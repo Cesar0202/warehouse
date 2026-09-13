@@ -5,6 +5,9 @@ export interface CatalogItem {
   unidad: string;
   stock: number;
   ubicacion: string;
+  foto?: string;
+  imagen?: string;
+  image_url?: string;
 }
 
 export interface AliasItem {

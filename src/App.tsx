@@ -12,6 +12,7 @@ import { ProductDetailDrawer } from './components/ProductDetailDrawer';
 import { AddItemModal } from './components/AddItemModal';
 import { LoginScreen } from './components/LoginScreen';
 import { TechnicianOrderView } from './components/TechnicianOrderView';
+import { SettingsModal } from './components/SettingsModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
 import { CatalogItem, AliasItem, ParsedLineResult, AISuggestion } from './types';
@@ -64,6 +65,9 @@ export function App() {
 
   // Add Item Modal state
   const [addItemModalOpen, setAddItemModalOpen] = useState(false);
+
+  // Settings Modal state
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -448,6 +452,7 @@ export function App() {
           hasAIKey={hasAIKey}
           onLogout={handleLogout}
           onSwitchToTechnician={() => handleSetAppMode('technician')}
+          onOpenSettings={() => setSettingsModalOpen(true)}
         />
       </div>
 
@@ -574,6 +579,12 @@ export function App() {
         product={selectedProductForDetail}
         onOpenEdit={handleOpenEditProduct}
         onOpenCreateAlias={handleOpenAliasModalFromCatalog}
+        onShowToast={showToast}
+      />
+
+      <SettingsModal
+        isOpen={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
         onShowToast={showToast}
       />
 

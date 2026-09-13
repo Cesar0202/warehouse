@@ -4,7 +4,8 @@ import {
   BookOpen, 
   UploadCloud, 
   Layers,
-  Wrench
+  Wrench,
+  Settings
 } from 'lucide-react';
 
 export type ActiveTab = 'order' | 'catalog' | 'aliases' | 'upload';
@@ -18,6 +19,7 @@ interface NavbarProps {
   hasAIKey: boolean;
   onLogout?: () => void;
   onSwitchToTechnician?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -27,7 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   aliasCount,
   pendingOrderCount,
   onLogout,
-  onSwitchToTechnician
+  onSwitchToTechnician,
+  onOpenSettings
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-sm font-sans">
@@ -140,11 +143,22 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
+            {onOpenSettings && (
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200 rounded-lg transition-all cursor-pointer"
+                title="Configuración de WhatsApp y Sistema"
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            )}
+
             {onLogout && (
               <button
                 type="button"
                 onClick={onLogout}
-                className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200 rounded-lg transition-all"
+                className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200 rounded-lg transition-all cursor-pointer"
                 title="Cerrar sesión"
               >
                 Salir
