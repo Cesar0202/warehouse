@@ -156,22 +156,22 @@ export const AddItemModal: React.FC<AddItemModalProps> = ({
               <span className="text-xs font-semibold text-neutral-700">Cantidad:</span>
               <input
                 type="number"
-                min="1"
-                step="1"
+                min="0.01"
+                step="any"
                 value={quantity === 0 ? '' : quantity}
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === '') {
                     setQuantity(0);
                   } else {
-                    const num = parseInt(val, 10);
+                    const num = parseFloat(val);
                     setQuantity(isNaN(num) ? 0 : Math.max(0, num));
                   }
                 }}
                 onBlur={() => {
-                  if (!quantity || quantity < 1) setQuantity(1);
+                  if (!quantity || quantity <= 0) setQuantity(1);
                 }}
-                className="w-20 text-center py-1.5 px-2 bg-white border border-neutral-300 rounded-lg text-xs font-mono font-bold text-neutral-900 outline-none focus:border-neutral-900"
+                className="w-24 text-center py-1.5 px-2 bg-white border border-neutral-300 rounded-lg text-xs font-mono font-bold text-neutral-900 outline-none focus:border-neutral-900"
               />
             </div>
           </div>

@@ -342,8 +342,8 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
                       <td className="py-3 px-3 text-center">
                         <input
                           type="number"
-                          min="1"
-                          step="1"
+                          min="0.01"
+                          step="any"
                           value={row.requestedQty === 0 ? '' : row.requestedQty}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -355,11 +355,11 @@ export const OrderResultsTable: React.FC<OrderResultsTableProps> = ({
                             }
                           }}
                           onBlur={() => {
-                            if (!row.requestedQty || row.requestedQty < 1) {
+                            if (!row.requestedQty || row.requestedQty <= 0) {
                               onUpdateResult(row.id, { requestedQty: 1 });
                             }
                           }}
-                          className="w-16 text-center py-1 px-1.5 border border-neutral-300 rounded-lg bg-white text-neutral-900 font-mono font-bold text-xs outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
+                          className="w-20 text-center py-1 px-1.5 border border-neutral-300 rounded-lg bg-white text-neutral-900 font-mono font-bold text-xs outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 transition-all"
                         />
                       </td>
 

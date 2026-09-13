@@ -51,7 +51,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   if (!isOpen || !product) return null;
 
   const handleAdjustStock = (delta: number) => {
-    setStock(prev => Math.max(0, prev + delta));
+    setStock(prev => Math.max(0, parseFloat((prev + delta).toFixed(2))));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -63,7 +63,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       familia: familia.trim(),
       unidad: unidad.trim(),
       ubicacion: ubicacion.trim(),
-      stock: Number(stock) || 0,
+      stock: parseFloat(String(stock)) || 0,
       foto: foto.trim()
     });
 
@@ -138,6 +138,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
               <input
                 type="number"
                 min="0"
+                step="any"
                 value={stock === 0 ? '' : stock}
                 placeholder="0"
                 onChange={(e) => {
@@ -145,11 +146,11 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                   if (val === '') {
                     setStock(0);
                   } else {
-                    const num = parseInt(val, 10);
+                    const num = parseFloat(val);
                     setStock(isNaN(num) ? 0 : Math.max(0, num));
                   }
                 }}
-                className="w-24 text-center py-2 bg-white border-2 border-neutral-900 rounded-lg text-xl font-bold font-mono text-neutral-900 focus:outline-none"
+                className="w-28 text-center py-2 bg-white border-2 border-neutral-900 rounded-lg text-xl font-bold font-mono text-neutral-900 focus:outline-none"
               />
 
               <button
