@@ -167,12 +167,11 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   };
 
   const handleQuickStockChange = (codArti: string, delta: number, currentStock: number) => {
-    const nextVal = Math.max(0, currentStock + delta);
+    const nextVal = Math.max(0, parseFloat((currentStock + delta).toFixed(2)));
     const updated = updateProductStock(codArti, nextVal);
     if (updated && onCatalogUpdated) {
       onCatalogUpdated([...getCatalogData()]);
     }
-    onShowToast('info', `Stock [${codArti}]`, `${currentStock} -> ${nextVal}`);
   };
 
   const toggleSelectRow = (codArti: string) => {
