@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'warehouse-pwa-v1';
+const CACHE_NAME = 'warehouse-pwa-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

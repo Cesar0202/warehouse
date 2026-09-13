@@ -455,18 +455,17 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   }`}
                 >
                   {/* Product Photo Thumbnail */}
-                  <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-neutral-800 border border-neutral-700/80 shrink-0">
+                  <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-700/80 shrink-0 flex items-center justify-center shadow-inner">
                     <img
                       src={imgUrl}
                       alt={item.descripcion}
                       loading="lazy"
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-contain p-1 bg-neutral-900"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = getProductImageUrl({ descripcion: item.descripcion, cod_arti: item.cod_arti });
                       }}
                     />
-                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-950/90 text-neutral-300 border border-neutral-800">
+                    <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-950/90 text-neutral-300 border border-neutral-800 backdrop-blur-xs">
                       {item.cod_arti}
                     </span>
                   </div>
@@ -707,8 +706,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           <img
                             src={imgUrl}
                             alt={c.item.descripcion}
-                            referrerPolicy="no-referrer"
-                            className="w-12 h-12 rounded-lg object-contain p-1 bg-neutral-900 border border-neutral-800 shrink-0"
+                            className="w-12 h-12 rounded-lg object-cover bg-neutral-900 border border-neutral-800 shrink-0"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-white truncate">{c.item.descripcion}</p>

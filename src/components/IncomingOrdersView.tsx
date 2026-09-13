@@ -573,8 +573,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                               alt={item.descripcion}
                               className="w-9 h-9 rounded-lg object-cover bg-neutral-100 shrink-0"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=300&auto=format&fit=crop&q=80';
+                                (e.target as HTMLImageElement).src = '/productos/cinta_aislante.jpg';
                               }}
                             />
                           ) : (
