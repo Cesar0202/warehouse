@@ -10,12 +10,12 @@ import {
   FileText,
   ClipboardCopy,
   Search,
-  CheckSquare,
-  AlertCircle
+  RefreshCw
 } from 'lucide-react';
 import {
   TechnicianOrder,
   getTechnicianOrders,
+  fetchOrdersFromCloud,
   updateTechnicianOrderStatus,
   deleteTechnicianOrder,
   clearAllTechnicianOrders,
@@ -40,25 +40,60 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'attended'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [orderToPrint, setOrderToPrint] = useState<TechnicianOrder | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const refreshOrders = () => {
-    setOrders(getTechnicianOrders());
+  const refreshOrders = async () => {
+    const local = getTechnicianOrders();
+    setOrders(local);
+    const cloud = await fetchOrdersFromCloud();
+    setOrders(cloud);
   };
 
   useEffect(() => {
-    const handleUpdate = () => refreshOrders();
+    refreshOrders();
+
+    const handleUpdate = () => {
+      setOrders(getTechnicianOrders());
+    };
+
     window.addEventListener(TECHNICIAN_ORDERS_EVENT, handleUpdate);
     window.addEventListener('storage', handleUpdate);
+    window.addEventListener('focus', refreshOrders);
+
+    // Auto-poll cloud every 3 seconds for new incoming orders
+    const interval = setInterval(() => {
+      fetchOrdersFromCloud().then((res) => {
+        if (Array.isArray(res)) {
+          setOrders(res);
+        }
+      });
+    }, 3000);
+
     return () => {
       window.removeEventListener(TECHNICIAN_ORDERS_EVENT, handleUpdate);
       window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('focus', refreshOrders);
+      clearInterval(interval);
     };
   }, []);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const latest = await fetchOrdersFromCloud();
+      setOrders(latest);
+      onShowToast('success', 'Bandeja sincronizada con la nube');
+    } catch (e: any) {
+      onShowToast('error', 'Error al sincronizar', e.message);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleToggleStatus = (order: TechnicianOrder) => {
     const newStatus = order.status === 'pending' ? 'attended' : 'pending';
     updateTechnicianOrderStatus(order.id, newStatus);
-    refreshOrders();
+    setOrders(getTechnicianOrders());
     onShowToast(
       'success',
       newStatus === 'attended' ? 'Pedido marcado como Atendido' : 'Pedido marcado como Pendiente'
@@ -66,9 +101,9 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   };
 
   const handleDelete = (orderId: string, orderNumber: string) => {
-    if (window.confirm(`¿Eliminar la solicitud ${orderNumber}?`)) {
+    if (window.confirm('¿Eliminar la solicitud ' + orderNumber + '?')) {
       deleteTechnicianOrder(orderId);
-      refreshOrders();
+      setOrders(getTechnicianOrders());
       onShowToast('info', 'Solicitud eliminada');
     }
   };
@@ -76,26 +111,25 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   const handleClearAll = () => {
     if (window.confirm('¿Seguro que deseas vaciar todas las solicitudes recibidas?')) {
       clearAllTechnicianOrders();
-      refreshOrders();
+      setOrders([]);
       onShowToast('info', 'Bandeja de solicitudes vaciada');
     }
   };
 
   const handleCopyOrderText = (order: TechnicianOrder) => {
     const lines = [
-      `SOLICITUD: ${order.orderNumber}`,
-      `TÉCNICO: ${order.technicianName}`,
-      `FECHA: ${new Date(order.createdAt).toLocaleString('es-PE')}`,
-      order.note ? `NOTA: ${order.note}` : '',
+      'SOLICITUD: ' + order.orderNumber,
+      'TÉCNICO: ' + order.technicianName,
+      'FECHA: ' + new Date(order.createdAt).toLocaleString('es-PE'),
+      order.note ? 'NOTA: ' + order.note : '',
       '------------------------------',
       ...order.items.map(
         (it, idx) =>
-          `${idx + 1}. [${it.cod_arti}] ${it.descripcion} - Cant: ${it.quantity} ${it.unidad}${
-            it.ubicacion ? ` (Ubic: ${it.ubicacion})` : ''
-          }`
+          (idx + 1) + '. [' + it.cod_arti + '] ' + it.descripcion + ' - Cant: ' + it.quantity + ' ' + it.unidad +
+          (it.ubicacion ? ' (Ubic: ' + it.ubicacion + ')' : '')
       ),
       '------------------------------',
-      `TOTAL ARTÍCULOS: ${order.totalItems} (${order.totalUnits} unidades)`
+      'TOTAL ARTÍCULOS: ' + order.totalItems + ' (' + order.totalUnits + ' unidades)'
     ]
       .filter(Boolean)
       .join('\n');
@@ -114,7 +148,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   const handleExportExcel = (order: TechnicianOrder) => {
     try {
       exportTechnicianOrderToExcel(order);
-      onShowToast('success', 'Excel generado con éxito', `Solicitud ${order.orderNumber}`);
+      onShowToast('success', 'Excel generado con éxito', 'Solicitud ' + order.orderNumber);
     } catch (e: any) {
       onShowToast('error', 'Error al exportar Excel', e.message);
     }
@@ -123,7 +157,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   const handleExportCSV = (order: TechnicianOrder) => {
     try {
       exportTechnicianOrderToCSV(order);
-      onShowToast('success', 'CSV generado con éxito', `Solicitud ${order.orderNumber}`);
+      onShowToast('success', 'CSV generado con éxito', 'Solicitud ' + order.orderNumber);
     } catch (e: any) {
       onShowToast('error', 'Error al exportar CSV', e.message);
     }
@@ -239,11 +273,17 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               <Package className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">
-                Bandeja de Solicitudes de Campo
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-neutral-900">
+                  Bandeja de Solicitudes de Campo
+                </h2>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  En Vivo
+                </span>
+              </div>
               <p className="text-xs text-neutral-500">
-                Pedidos enviados en tiempo real por los técnicos. Imprime vales o exporta a Excel/CSV directamente.
+                Sincronización en tiempo real con celulares y tablets de técnicos
               </p>
             </div>
           </div>
@@ -251,26 +291,36 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
 
         {/* Global Actions & Status Filter */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="p-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl border border-neutral-200 transition-all cursor-pointer"
+            title="Sincronizar pedidos con la nube"
+          >
+            <RefreshCw className={'w-4 h-4 ' + (isRefreshing ? 'animate-spin' : '')} />
+          </button>
+
           <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200 text-xs">
             <button
               type="button"
               onClick={() => setFilterStatus('all')}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={'px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ' + (
                 filterStatus === 'all'
                   ? 'bg-neutral-900 text-white shadow-sm'
                   : 'text-neutral-600 hover:text-neutral-900'
-              }`}
+              )}
             >
               Todos ({orders.length})
             </button>
             <button
               type="button"
               onClick={() => setFilterStatus('pending')}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={'px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
                 filterStatus === 'pending'
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'text-amber-700 hover:bg-amber-100/60'
-              }`}
+              )}
             >
               <span className="w-2 h-2 rounded-full bg-amber-400"></span>
               <span>Pendientes ({pendingCount})</span>
@@ -278,11 +328,11 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
             <button
               type="button"
               onClick={() => setFilterStatus('attended')}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={'px-3 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
                 filterStatus === 'attended'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-emerald-700 hover:bg-emerald-100/60'
-              }`}
+              )}
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
               <span>Atendidos ({attendedCount})</span>
@@ -337,7 +387,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
           <h3 className="font-bold text-neutral-800 text-base">No hay solicitudes en la bandeja</h3>
           <p className="text-xs text-neutral-500 max-w-md mx-auto">
             Cuando los técnicos elijan sus materiales y presionen{' '}
-            <strong>"Enviar Pedido al Almacén"</strong> en su celular, aparecerán aquí de forma inmediata con opciones para imprimir, exportar a Excel y CSV.
+            <strong>"Enviar Pedido al Almacén"</strong> en su celular, aparecerán aquí de forma inmediata en tiempo real.
           </p>
           {onSwitchToTechnician && (
             <div className="pt-2">
@@ -370,23 +420,23 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
             return (
               <div
                 key={order.id}
-                className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${
+                className={'bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ' + (
                   isPending
                     ? 'border-amber-300 ring-1 ring-amber-300/40'
                     : 'border-neutral-200 opacity-90'
-                }`}
+                )}
               >
                 {/* Order Header */}
                 <div
-                  className={`p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b ${
+                  className={'p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b ' + (
                     isPending ? 'bg-amber-50/60 border-amber-200' : 'bg-neutral-50 border-neutral-200'
-                  }`}
+                  )}
                 >
                   <div className="flex flex-wrap items-center gap-2.5">
                     <span
-                      className={`px-2.5 py-1 rounded-lg text-xs font-bold font-mono uppercase tracking-wide ${
+                      className={'px-2.5 py-1 rounded-lg text-xs font-bold font-mono uppercase tracking-wide ' + (
                         isPending ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}
+                      )}
                     >
                       {isPending ? 'Pendiente' : 'Atendido'}
                     </span>
@@ -422,7 +472,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 py-2">
                     {order.items.map((item, idx) => (
                       <div
-                        key={`${order.id}-item-${idx}`}
+                        key={order.id + '-item-' + idx}
                         className="p-3 rounded-xl bg-neutral-50 border border-neutral-200/80 flex items-center gap-3"
                       >
                         {item.foto ? (
@@ -525,11 +575,11 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleToggleStatus(order)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ${
+                      className={'px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border ' + (
                         isPending
                           ? 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-300'
                           : 'bg-white hover:bg-neutral-100 text-neutral-600 border-neutral-300'
-                      }`}
+                      )}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>{isPending ? 'Marcar Atendido' : 'Reabrir'}</span>
