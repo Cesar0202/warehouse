@@ -458,36 +458,15 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                       <h3 className="text-sm font-semibold text-white leading-snug line-clamp-2">
                         {item.descripcion}
                       </h3>
-
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                        {/* Stock Badge */}
-                        {hasStock ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            Stock: {item.stock} {item.unidad || 'UND'}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium bg-neutral-800 text-neutral-400 border border-neutral-700">
-                            Agotado (0)
-                          </span>
-                        )}
-
-                        {item.ubicacion && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-neutral-400 bg-neutral-800/80 px-1.5 py-0.5 rounded border border-neutral-700">
-                            <MapPin className="w-2.5 h-2.5" />
-                            {item.ubicacion}
-                          </span>
-                        )}
-                      </div>
                     </div>
 
                     {/* Action Controls */}
-                    <div className="pt-2 flex items-center justify-end">
+                    <div className="pt-3 flex items-center justify-end">
                       {qtyInCart === 0 ? (
                         <button
                           type="button"
                           onClick={() => handleAddToCart(item)}
-                          className="px-3.5 py-1.5 bg-white hover:bg-neutral-200 active:scale-95 text-black text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="px-4 py-2 bg-white hover:bg-neutral-200 active:scale-95 text-black text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5 stroke-[3]" />
                           <span>Agregar</span>
@@ -603,7 +582,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-white truncate">{c.item.descripcion}</p>
                         <p className="text-[11px] font-mono text-neutral-400">
-                          [{c.item.cod_arti}] • Stock: {c.item.stock} {c.item.unidad || 'UND'}
+                          [{c.item.cod_arti}] • {c.item.unidad || 'UND'}
                         </p>
                       </div>
 
