@@ -29,6 +29,7 @@ import {
   exportTechnicianOrderToCSV,
   exportAllOrdersToExcel
 } from '../services/exportService';
+import { DEFAULT_PRODUCT_IMAGE } from '../services/imageHelper';
 
 interface IncomingOrdersViewProps {
   onShowToast: (type: 'success' | 'warning' | 'error' | 'info', title: string, msg?: string) => void;
@@ -573,7 +574,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                               alt={item.descripcion}
                               className="w-9 h-9 rounded-lg object-cover bg-neutral-100 shrink-0"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/productos/cinta_aislante.jpg';
+                                (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMAGE;
                               }}
                             />
                           ) : (

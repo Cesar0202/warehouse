@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, updateProductStock, getCatalogData } from '../services/catalogService';
-import { getProductImageUrl } from '../services/imageHelper';
+import { getProductImageUrl, DEFAULT_PRODUCT_IMAGE } from '../services/imageHelper';
 import { CustomExportModal } from './CustomExportModal';
 
 interface CatalogExplorerProps {
@@ -448,7 +448,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                           className="w-9 h-9 rounded-lg object-cover border border-neutral-200 bg-neutral-100 shrink-0"
                           loading="lazy"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/productos/cinta_aislante.jpg';
+                            (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMAGE;
                           }}
                         />
                         <div className="min-w-0">
