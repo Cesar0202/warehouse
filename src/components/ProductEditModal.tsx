@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Edit3, 
   X, 
@@ -9,7 +9,12 @@ import {
   MapPin, 
   Tag, 
   FolderTree,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Camera,
+  Upload,
+  Trash2,
+  RotateCcw,
+  Link2
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { updateProductDetails } from '../services/catalogService';
@@ -36,6 +41,10 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [unidad, setUnidad] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [foto, setFoto] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (product) {
@@ -45,6 +54,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       setUnidad(product.unidad || '007=UNIDAD (BIENES)');
       setUbicacion(product.ubicacion || '');
       setFoto(product.foto || product.imagen || product.image_url || '');
+      setShowUrlInput(false);
     }
   }, [product, isOpen]);
 
@@ -52,6 +62,48 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
   const handleAdjustStock = (delta: number) => {
     setStock(prev => Math.max(0, parseFloat((prev + delta).toFixed(2))));
+  };
+
+  const processImageFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      onShowToast('error', 'Archivo inválido', 'Por favor selecciona una imagen JPG, PNG o WebP.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 500;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          setFoto(compressed);
+          onShowToast('success', 'Foto optimizada', 'Imagen lista para guardar');
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -74,6 +126,8 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
     }
   };
 
+  const currentPreview = foto.trim() || getProductImageUrl(product);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm font-sans">
       <div className="bg-white rounded-xl border border-neutral-300 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
@@ -93,7 +147,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-neutral-500">
-                Ajuste de inventario en tiempo real
+                Ajuste de inventario, fotos y datos en tiempo real
               </p>
             </div>
           </div>
@@ -170,6 +224,107 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
             </div>
           </div>
 
+          {/* Photo Management Section (Camera / Upload / Reset) */}
+          <div className="p-4 bg-neutral-50 border border-neutral-300 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-neutral-600" />
+                <span>Foto Real del Producto</span>
+              </label>
+              {foto && (
+                <button
+                  type="button"
+                  onClick={() => setFoto('')}
+                  className="text-[11px] text-red-600 hover:text-red-700 flex items-center gap-1 font-semibold"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Quitar foto personalizada</span>
+                </button>
+              )}
+            </div>
+
+            {/* Hidden file & camera inputs */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  processImageFile(e.target.files[0]);
+                }
+              }}
+            />
+            <input
+              type="file"
+              ref={cameraInputRef}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  processImageFile(e.target.files[0]);
+                }
+              }}
+            />
+
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-xl border-2 border-neutral-300 bg-white overflow-hidden shrink-0 flex items-center justify-center shadow-inner relative group">
+                <img
+                  src={currentPreview}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="flex-1 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-800 text-xs font-bold transition-all shadow-sm"
+                  >
+                    <Camera className="w-4 h-4 text-neutral-700" />
+                    <span>Tomar Foto</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-800 text-xs font-bold transition-all shadow-sm"
+                  >
+                    <Upload className="w-4 h-4 text-neutral-700" />
+                    <span>Subir Archivo</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-0.5">
+                  <span>Soporta cámara de celular y fotos de PC</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    className="text-neutral-700 hover:text-black font-semibold flex items-center gap-1 underline"
+                  >
+                    <Link2 className="w-3 h-3" />
+                    <span>{showUrlInput ? 'Ocultar URL' : 'Pegar URL'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {showUrlInput && (
+              <div className="pt-2 border-t border-neutral-200">
+                <input
+                  type="url"
+                  value={foto}
+                  onChange={(e) => setFoto(e.target.value)}
+                  placeholder="https://ejemplo.com/foto-material.jpg"
+                  className="w-full px-3 py-1.5 bg-white border border-neutral-300 rounded-lg text-neutral-900 text-xs focus:border-neutral-900 outline-none font-mono text-[11px]"
+                />
+              </div>
+            )}
+          </div>
+
           {/* Description */}
           <div>
             <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">
@@ -223,40 +378,6 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
               placeholder="Ej: ESTANTE-A3, PASILLO-2..."
               className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 text-xs focus:bg-white focus:border-neutral-900 outline-none transition-all"
             />
-          </div>
-
-          {/* Photo URL */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
-                Foto del Producto (URL Imagen)
-              </label>
-              <span className="text-[10px] text-neutral-400">Opcional</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-xl border border-neutral-300 bg-neutral-100 overflow-hidden shrink-0 flex items-center justify-center">
-                <img
-                  src={foto.trim() || getProductImageUrl(product)}
-                  alt="Vista previa"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=300&auto=format&fit=crop&q=80';
-                  }}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <input
-                  type="url"
-                  value={foto}
-                  onChange={(e) => setFoto(e.target.value)}
-                  placeholder="https://ejemplo.com/foto-producto.jpg"
-                  className="w-full px-3.5 py-2 bg-neutral-50 border border-neutral-300 rounded-lg text-neutral-900 text-xs focus:bg-white focus:border-neutral-900 outline-none transition-all font-mono text-[11px]"
-                />
-                <p className="text-[10px] text-neutral-400 mt-1">
-                  Pega el link de la foto del artículo para que el técnico lo vea al pedir.
-                </p>
-              </div>
-            </div>
           </div>
 
           {/* Footer actions */}

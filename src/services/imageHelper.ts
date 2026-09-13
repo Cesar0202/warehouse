@@ -18,45 +18,47 @@ export const SVG_IMAGES = {
 export const getProductImageUrl = (
   item: CatalogItem | { descripcion: string; cod_arti: string; familia?: string; foto?: string; imagen?: string; image_url?: string }
 ): string => {
-  if (item.foto && item.foto.trim() && !item.foto.includes('unsplash')) return item.foto.trim();
-  if (item.imagen && item.imagen.trim() && !item.imagen.includes('unsplash')) return item.imagen.trim();
-  if (item.image_url && item.image_url.trim() && !item.image_url.includes('unsplash')) return item.image_url.trim();
+  // 1. If explicit user-uploaded base64 or valid URL is set, return it
+  if (item.foto && item.foto.trim() && !item.foto.includes('unsplash.com')) return item.foto.trim();
+  if (item.imagen && item.imagen.trim() && !item.imagen.includes('unsplash.com')) return item.imagen.trim();
+  if (item.image_url && item.image_url.trim() && !item.image_url.includes('unsplash.com')) return item.image_url.trim();
 
-  const cod = item.cod_arti.toUpperCase().trim();
+  const cod = item.cod_arti ? item.cod_arti.toUpperCase().trim() : '';
   const desc = (item.descripcion || '').toLowerCase();
   const fam = (item.familia || '').toUpperCase();
 
+  // 2. Real local product photos in /productos/ directory
   if (cod.startsWith('CIN08') || cod.startsWith('CIN01') || cod.startsWith('CIN03') || cod.startsWith('CIN20') || cod.startsWith('CIN21')) {
-    return SVG_IMAGES.cinta_aislante;
+    return '/productos/cinta_aislante.jpg';
   }
-  if (cod.startsWith('CIN02')) return SVG_IMAGES.cinta_aluminio;
-  if (cod.startsWith('DES')) return SVG_IMAGES.desatorador;
-  if (cod.startsWith('TRAP')) return SVG_IMAGES.trapo;
-  if (cod.startsWith('PEG')) return SVG_IMAGES.pegamento;
-  if (cod.startsWith('SIL')) return SVG_IMAGES.silicona;
-  if (cod.startsWith('CUR')) return SVG_IMAGES.curva;
-  if (cod.startsWith('UNI')) return SVG_IMAGES.union;
-  if (cod.startsWith('BRA') || cod.startsWith('ABR')) return SVG_IMAGES.abrazadera;
-  if (cod.startsWith('PER')) return SVG_IMAGES.perno;
+  if (cod.startsWith('CIN02')) return '/productos/cinta_aluminio.jpg';
+  if (cod.startsWith('DES')) return '/productos/desatorador.jpg';
+  if (cod.startsWith('TRAP')) return '/productos/trapo.jpg';
+  if (cod.startsWith('PEG')) return '/productos/pegamento.jpg';
+  if (cod.startsWith('SIL')) return '/productos/silicona.jpg';
+  if (cod.startsWith('BRA') || cod.startsWith('ABR')) return '/productos/abrazadera.jpg';
+  if (cod.startsWith('PER')) return '/productos/perno.jpg';
 
-  if (desc.includes('aluminio') && desc.includes('cinta')) return SVG_IMAGES.cinta_aluminio;
-  if (desc.includes('teflon') || desc.includes('ptfe')) return SVG_IMAGES.cinta_teflon;
+  // Description / Family keywords -> Local real photos
+  if (desc.includes('aluminio') && desc.includes('cinta')) return '/productos/cinta_aluminio.jpg';
+  if (desc.includes('teflon') || desc.includes('ptfe')) return '/productos/cinta_teflon.jpg';
   if (desc.includes('aislante') || desc.includes('templex') || desc.includes('super 33') || desc.includes('vulcaniz')) {
-    return SVG_IMAGES.cinta_aislante;
+    return '/productos/cinta_aislante.jpg';
   }
-  if (desc.includes('cinta') || fam.includes('CINTA')) return SVG_IMAGES.cinta_aislante;
+  if (desc.includes('cinta') || fam.includes('CINTA')) return '/productos/cinta_aislante.jpg';
   if (desc.includes('desatorador') || desc.includes('sapolio') || desc.includes('drano') || fam.includes('LIMPIEZA')) {
-    return SVG_IMAGES.desatorador;
+    return '/productos/desatorador.jpg';
   }
-  if (desc.includes('trapo') || fam.includes('TRAPO')) return SVG_IMAGES.trapo;
-  if (desc.includes('silicona') || desc.includes('sellador')) return SVG_IMAGES.silicona;
+  if (desc.includes('trapo') || fam.includes('TRAPO')) return '/productos/trapo.jpg';
+  if (desc.includes('silicona') || desc.includes('sellador')) return '/productos/silicona.jpg';
   if (desc.includes('pegamento') || desc.includes('africano') || desc.includes('cemento') || fam.includes('PEGAMENTO')) {
-    return SVG_IMAGES.pegamento;
+    return '/productos/pegamento.jpg';
   }
+  if (desc.includes('abrazadera') || fam.includes('ABRAZADERA')) return '/productos/abrazadera.jpg';
+  if (desc.includes('perno') || desc.includes('tornillo') || desc.includes('tuerca')) return '/productos/perno.jpg';
+
   if (desc.includes('curva') || fam.includes('CURVA')) return SVG_IMAGES.curva;
   if (desc.includes('union') || desc.includes('unión')) return SVG_IMAGES.union;
-  if (desc.includes('abrazadera') || fam.includes('ABRAZADERA')) return SVG_IMAGES.abrazadera;
-  if (desc.includes('perno') || desc.includes('tornillo') || desc.includes('tuerca')) return SVG_IMAGES.perno;
 
   return SVG_IMAGES.general;
 };
