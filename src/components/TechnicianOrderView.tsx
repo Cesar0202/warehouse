@@ -41,6 +41,7 @@ interface CartItem {
 const TECH_NAME_STORAGE = 'app_technician_name_v1';
 const WAREHOUSE_PHONE_STORAGE = 'app_warehouse_whatsapp_phone_v1';
 const CART_STORAGE = 'app_technician_cart_v1';
+const ENV_DEFAULT_PHONE = ((import.meta as any).env?.VITE_WAREHOUSE_WHATSAPP_PHONE as string) || '';
 
 export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   catalog = [],
@@ -50,7 +51,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 }) => {
   const [techName, setTechName] = useState(() => localStorage.getItem(TECH_NAME_STORAGE) || '');
   const [isEditingName, setIsEditingName] = useState(!localStorage.getItem(TECH_NAME_STORAGE));
-  const [warehousePhone, setWarehousePhone] = useState(() => localStorage.getItem(WAREHOUSE_PHONE_STORAGE) || '');
+  const [warehousePhone, setWarehousePhone] = useState(() => {
+    return localStorage.getItem(WAREHOUSE_PHONE_STORAGE) || ENV_DEFAULT_PHONE || '';
+  });
   const [isEditingPhone, setIsEditingPhone] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -242,9 +245,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     const message = generateWhatsAppMessage();
     const encodedMessage = encodeURIComponent(message);
 
-    let phoneParam = warehousePhone ? warehousePhone.replace(/[^0-9]/g, '') : '';
-    const waUrl = phoneParam
-      ? `https://wa.me/${phoneParam}?text=${encodedMessage}`
+    const activePhone = (warehousePhone || ENV_DEFAULT_PHONE || '').replace(/[^0-9]/g, '');
+    const waUrl = activePhone
+      ? `https://wa.me/${activePhone}?text=${encodedMessage}`
       : `https://wa.me/?text=${encodedMessage}`;
 
     window.open(waUrl, '_blank');
