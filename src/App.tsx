@@ -22,6 +22,12 @@ import { hasGeminiApiKey, decipherTermWithAI } from './services/aiAgentService';
 
 export function App() {
   const [appMode, setAppMode] = useState<'technician' | 'warehouse'>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('admin') === '1' || params.get('almacen') === '1') {
+        return 'warehouse';
+      }
+    } catch {}
     const saved = localStorage.getItem('app_mode');
     if (saved === 'warehouse') return 'warehouse';
     return 'technician';
