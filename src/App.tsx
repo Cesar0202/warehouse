@@ -510,6 +510,7 @@ export function App() {
                   onOpenEditModal={handleOpenEditProduct}
                   onOpenDetailDrawer={handleOpenProductDetail}
                   onOpenAliasModalForCatalogItem={handleOpenAliasModalFromCatalog}
+                  onCatalogUpdated={refreshCatalogState}
                   onShowToast={showToast}
                 />
               </div>

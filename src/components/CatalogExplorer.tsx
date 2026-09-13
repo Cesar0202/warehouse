@@ -16,7 +16,7 @@ import {
   Package
 } from 'lucide-react';
 import { CatalogItem } from '../types';
-import { searchCatalogFuzzy, updateProductStock } from '../services/catalogService';
+import { searchCatalogFuzzy, updateProductStock, getCatalogData } from '../services/catalogService';
 import { getProductImageUrl } from '../services/imageHelper';
 import { CustomExportModal } from './CustomExportModal';
 
@@ -25,6 +25,7 @@ interface CatalogExplorerProps {
   onOpenEditModal: (product: CatalogItem) => void;
   onOpenDetailDrawer: (product: CatalogItem) => void;
   onOpenAliasModalForCatalogItem: (item: CatalogItem) => void;
+  onCatalogUpdated?: (newCatalog: CatalogItem[]) => void;
   onShowToast: (type: 'success' | 'warning' | 'error' | 'info', title: string, msg?: string) => void;
 }
 
@@ -36,6 +37,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   onOpenEditModal,
   onOpenDetailDrawer,
   onOpenAliasModalForCatalogItem,
+  onCatalogUpdated,
   onShowToast
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -166,7 +168,10 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
 
   const handleQuickStockChange = (codArti: string, delta: number, currentStock: number) => {
     const nextVal = Math.max(0, currentStock + delta);
-    updateProductStock(codArti, nextVal);
+    const updated = updateProductStock(codArti, nextVal);
+    if (updated && onCatalogUpdated) {
+      onCatalogUpdated([...getCatalogData()]);
+    }
     onShowToast('info', `Stock [${codArti}]`, `${currentStock} -> ${nextVal}`);
   };
 
