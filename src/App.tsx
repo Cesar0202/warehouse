@@ -12,6 +12,7 @@ import { ProductDetailDrawer } from './components/ProductDetailDrawer';
 import { AddItemModal } from './components/AddItemModal';
 import { LoginScreen } from './components/LoginScreen';
 import { TechnicianOrderView } from './components/TechnicianOrderView';
+import { IncomingOrdersView } from './components/IncomingOrdersView';
 import { SettingsModal } from './components/SettingsModal';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
@@ -20,6 +21,11 @@ import { initCatalog, setCatalogData, getCatalogItemByCode, getCatalogData } fro
 import { initAliases, getAliases, addOrUpdateAlias } from './services/aliasService';
 import { processOrderText } from './services/orderParser';
 import { hasGeminiApiKey, decipherTermWithAI } from './services/aiAgentService';
+import {
+  TechnicianOrder,
+  getTechnicianOrders,
+  TECHNICIAN_ORDERS_EVENT
+} from './services/technicianOrderService';
 
 export function App() {
   const [appMode, setAppMode] = useState<'technician' | 'warehouse'>(() => {
@@ -37,10 +43,13 @@ export function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('warehouse_auth_session') === 'true';
   });
-  const [activeTab, setActiveTab] = useState<ActiveTab>('order');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('incoming');
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [aliases, setAliases] = useState<AliasItem[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+
+  // Incoming Technician Orders
+  const [incomingOrders, setIncomingOrders] = useState<TechnicianOrder[]>(() => getTechnicianOrders());
 
   // Order processing state
   const [inputText, setInputText] = useState('');
@@ -110,6 +119,21 @@ export function App() {
     loadAppData();
   }, []);
 
+  // Listen for incoming technician orders
+  useEffect(() => {
+    const handleOrdersChange = () => {
+      const current = getTechnicianOrders();
+      setIncomingOrders(current);
+    };
+
+    window.addEventListener(TECHNICIAN_ORDERS_EVENT, handleOrdersChange);
+    window.addEventListener('storage', handleOrdersChange);
+    return () => {
+      window.removeEventListener(TECHNICIAN_ORDERS_EVENT, handleOrdersChange);
+      window.removeEventListener('storage', handleOrdersChange);
+    };
+  }, []);
+
   const refreshCatalogState = () => {
     setCatalog([...getCatalogData()]);
   };
@@ -145,6 +169,42 @@ export function App() {
     }, 120);
   };
 
+  // Load an incoming technician order directly into the dispatch table
+  const handleLoadOrderToDispatch = (order: TechnicianOrder) => {
+    const rows: ParsedLineResult[] = order.items.map((item, idx) => {
+      const catalogItem = getCatalogItemByCode(item.cod_arti) || {
+        cod_arti: item.cod_arti,
+        descripcion: item.descripcion,
+        familia: 'MATERIALES',
+        unidad: item.unidad || 'UND',
+        stock: 999,
+        ubicacion: item.ubicacion || '',
+        foto: item.foto
+      };
+
+      return {
+        id: `line-tech-${order.id}-${idx}-${Date.now()}`,
+        rawLine: `[${item.cod_arti}] ${item.descripcion} x ${item.quantity} ${item.unidad}`,
+        detectedTerm: item.descripcion,
+        requestedQty: item.quantity,
+        matchedItem: catalogItem,
+        confidenceLevel: 'high',
+        matchScore: 100,
+        matchType: 'manual',
+        selected: true,
+        notes: `Solicitud ${order.orderNumber} (Técnico: ${order.technicianName})`
+      };
+    });
+
+    setOrderResults(rows);
+    setActiveTab('order');
+    showToast(
+      'success',
+      `Solicitud ${order.orderNumber} cargada`,
+      `Se prepararon ${rows.length} artículos del técnico ${order.technicianName} en la mesa de despacho.`
+    );
+  };
+
   const handleUpdateLineResult = (id: string, updated: Partial<ParsedLineResult>) => {
     setOrderResults((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updated } : item))
@@ -155,7 +215,7 @@ export function App() {
     setOrderResults((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // AI Agent: Decipher Single Line (supports splitting compound items)
+  // AI Agent: Decipher Single Line
   const handleDecipherLineWithAI = async (line: ParsedLineResult) => {
     if (!hasAIKey) {
       showToast('warning', 'API Key no configurada', 'Coloca VITE_GEMINI_API_KEY en tu archivo .env.');
@@ -167,7 +227,6 @@ export function App() {
     try {
       const suggestion = await decipherTermWithAI(line.detectedTerm, line.rawLine);
 
-      // If the AI detected multiple distinct articles in this single line (e.g. "trapo color y trapo blanco")
       if (suggestion.items && Array.isArray(suggestion.items) && suggestion.items.length > 1) {
         const newRows: ParsedLineResult[] = suggestion.items.map((subItem, idx) => {
           const catalogItem = getCatalogItemByCode(subItem.cod_arti);
@@ -202,7 +261,6 @@ export function App() {
         return;
       }
 
-      // Single item resolution
       const catalogItem = getCatalogItemByCode(suggestion.cod_arti);
 
       handleUpdateLineResult(line.id, {
@@ -224,7 +282,7 @@ export function App() {
     }
   };
 
-  // AI Agent: Decipher All Unresolved Batch in Parallel
+  // AI Agent: Decipher All Unresolved Batch
   const handleDecipherAllUnresolvedWithAI = async () => {
     if (!hasAIKey) {
       showToast('warning', 'API Key no configurada', 'Coloca VITE_GEMINI_API_KEY en tu archivo .env o en Configuración IA.');
@@ -240,7 +298,6 @@ export function App() {
     setIsDecipheringBatch(true);
     let resolvedCount = 0;
 
-    // Process up to 3 concurrent requests at a time for high speed without rate-limiting
     const concurrency = 3;
     for (let i = 0; i < unresolved.length; i += concurrency) {
       const chunk = unresolved.slice(i, i + concurrency);
@@ -304,7 +361,6 @@ export function App() {
     showToast('success', 'Procesamiento IA completado', `${resolvedCount} artículos resueltos.`);
   };
 
-  // Accept AI Suggestion & auto-save to Alias Dictionary
   const handleAcceptAISuggestion = (line: ParsedLineResult, suggestion: AISuggestion) => {
     const aliasToSave = suggestion.aliasSugerido || line.detectedTerm;
     addOrUpdateAlias(aliasToSave, suggestion.cod_arti, suggestion.explicacion, true);
@@ -324,7 +380,6 @@ export function App() {
     showToast('success', '¡Jerga aprendida y guardada!', `"${aliasToSave}" registrada en el diccionario.`);
   };
 
-  // Open Catalog search for a specific line
   const handleOpenCatalogSearchForLine = (line: ParsedLineResult) => {
     setSelectedLineForSearch(line);
     setCatalogSearchModalOpen(true);
@@ -342,14 +397,12 @@ export function App() {
     showToast('success', 'Artículo asignado', `[${item.cod_arti}] ${item.descripcion}`);
   };
 
-  // Open Alias Modal from table row
   const handleOpenAliasModalFromRow = (line: ParsedLineResult) => {
     setAliasModalInitialTerm(line.detectedTerm);
     setAliasModalInitialItem(line.matchedItem);
     setAliasModalOpen(true);
   };
 
-  // Open Alias Modal for a catalog item from explorer
   const handleOpenAliasModalFromCatalog = (item: CatalogItem) => {
     setAliasModalInitialTerm('');
     setAliasModalInitialItem(item);
@@ -365,7 +418,6 @@ export function App() {
     }
   };
 
-  // Product Edit Handlers
   const handleOpenEditProduct = (product: CatalogItem) => {
     setSelectedProductForEdit(product);
     setProductEditModalOpen(true);
@@ -378,7 +430,6 @@ export function App() {
     }
   };
 
-  // Product Detail Handlers
   const handleOpenProductDetail = (product: CatalogItem) => {
     setSelectedProductForDetail(product);
     setProductDetailDrawerOpen(true);
@@ -409,6 +460,8 @@ export function App() {
     localStorage.setItem('app_mode', mode);
     setAppMode(mode);
   };
+
+  const pendingIncomingCount = incomingOrders.filter((o) => o.status === 'pending').length;
 
   if (appMode === 'technician') {
     return (
@@ -449,6 +502,7 @@ export function App() {
           catalogCount={catalog.length}
           aliasCount={aliases.length}
           pendingOrderCount={orderResults.length}
+          incomingOrdersCount={pendingIncomingCount}
           hasAIKey={hasAIKey}
           onLogout={handleLogout}
           onSwitchToTechnician={() => handleSetAppMode('technician')}
@@ -469,7 +523,18 @@ export function App() {
           </div>
         ) : (
           <>
-            {/* TAB: Order Processing */}
+            {/* TAB: Incoming Requests from Technicians */}
+            {activeTab === 'incoming' && (
+              <div className="animate-fade-in print:hidden">
+                <IncomingOrdersView
+                  onLoadOrderToDispatch={handleLoadOrderToDispatch}
+                  onShowToast={showToast}
+                  onSwitchToTechnician={() => handleSetAppMode('technician')}
+                />
+              </div>
+            )}
+
+            {/* TAB: Order Processing / Dispatch */}
             {activeTab === 'order' && (
               <div className="space-y-8 animate-fade-in print:space-y-0">
                 <div className="print:hidden">

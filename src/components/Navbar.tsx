@@ -5,10 +5,11 @@ import {
   UploadCloud, 
   Layers,
   Wrench,
-  Settings
+  Settings,
+  Package
 } from 'lucide-react';
 
-export type ActiveTab = 'order' | 'catalog' | 'aliases' | 'upload';
+export type ActiveTab = 'incoming' | 'order' | 'catalog' | 'aliases' | 'upload';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -16,6 +17,7 @@ interface NavbarProps {
   catalogCount: number;
   aliasCount: number;
   pendingOrderCount: number;
+  incomingOrdersCount: number;
   hasAIKey: boolean;
   onLogout?: () => void;
   onSwitchToTechnician?: () => void;
@@ -28,6 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   catalogCount,
   aliasCount,
   pendingOrderCount,
+  incomingOrdersCount,
   onLogout,
   onSwitchToTechnician,
   onOpenSettings
@@ -39,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Logo & Title */}
           <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3">
             <span className="font-bold text-base sm:text-lg tracking-tight text-neutral-900 font-mono">
-              DEMO - ALMACÉN
+              ALMACÉN CENTRAL
             </span>
             <div className="flex items-center gap-2 sm:hidden">
               {onSwitchToTechnician && (
@@ -67,6 +70,32 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Navigation Pill Bar */}
           <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex items-center gap-2">
             <nav className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 min-w-max">
+              {/* Solicitudes de Campo (Bandeja Entrante) */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('incoming')}
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'incoming'
+                    ? 'bg-neutral-900 text-white shadow-sm'
+                    : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
+                }`}
+              >
+                <Package className="w-3.5 h-3.5" />
+                <span>Solicitudes</span>
+                {incomingOrdersCount > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 text-[10px] font-mono font-bold rounded ${
+                      activeTab === 'incoming'
+                        ? 'bg-amber-400 text-black'
+                        : 'bg-amber-500 text-black animate-pulse'
+                    }`}
+                  >
+                    {incomingOrdersCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Pedidos y Despacho */}
               <button
                 type="button"
                 onClick={() => setActiveTab('order')}
@@ -77,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Pedidos</span>
+                <span>Despacho</span>
                 {pendingOrderCount > 0 && (
                   <span className={`px-1.5 py-0.2 text-[10px] font-mono font-bold rounded ${activeTab === 'order' ? 'bg-white text-neutral-900' : 'bg-neutral-900 text-white'}`}>
                     {pendingOrderCount}
@@ -85,6 +114,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </button>
 
+              {/* Inventario */}
               <button
                 type="button"
                 onClick={() => setActiveTab('catalog')}
@@ -101,6 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
 
+              {/* Diccionario de Alias */}
               <button
                 type="button"
                 onClick={() => setActiveTab('aliases')}
@@ -117,6 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
 
+              {/* Cargar Excel */}
               <button
                 type="button"
                 onClick={() => setActiveTab('upload')}
@@ -148,7 +180,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 type="button"
                 onClick={onOpenSettings}
                 className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 border border-neutral-200 rounded-lg transition-all cursor-pointer"
-                title="Configuración de WhatsApp y Sistema"
+                title="Configuración del Sistema"
               >
                 <Settings className="w-4 h-4" />
               </button>

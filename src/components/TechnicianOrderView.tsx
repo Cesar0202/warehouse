@@ -11,20 +11,16 @@ import {
   User,
   Wrench,
   Layers,
-  Phone,
-  ClipboardCopy,
   RotateCcw,
-  Warehouse,
   CheckCircle2,
   Package,
-  MapPin,
-  FileText,
-  AlertCircle
+  FileCheck
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, getCatalogData, initCatalog } from '../services/catalogService';
 import { getAliases } from '../services/aliasService';
 import { getProductImageUrl } from '../services/imageHelper';
+import { createTechnicianOrder, TechnicianOrder } from '../services/technicianOrderService';
 
 interface TechnicianOrderViewProps {
   catalog?: CatalogItem[];
@@ -39,9 +35,7 @@ interface CartItem {
 }
 
 const TECH_NAME_STORAGE = 'app_technician_name_v1';
-const WAREHOUSE_PHONE_STORAGE = 'app_warehouse_whatsapp_phone_v1';
 const CART_STORAGE = 'app_technician_cart_v1';
-const ENV_DEFAULT_PHONE = ((import.meta as any).env?.VITE_WAREHOUSE_WHATSAPP_PHONE as string) || '';
 
 export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   catalog = [],
@@ -50,11 +44,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   onSwitchToWarehouse
 }) => {
   const [techName, setTechName] = useState(() => localStorage.getItem(TECH_NAME_STORAGE) || '');
-  const [isEditingName, setIsEditingName] = useState(!localStorage.getItem(TECH_NAME_STORAGE));
-  const [warehousePhone, setWarehousePhone] = useState(() => {
-    return localStorage.getItem(WAREHOUSE_PHONE_STORAGE) || ENV_DEFAULT_PHONE || '';
-  });
-  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [isEditingNameHeader, setIsEditingNameHeader] = useState(!localStorage.getItem(TECH_NAME_STORAGE));
+  const [isEditingNameModal, setIsEditingNameModal] = useState(false);
+  const [tempModalName, setTempModalName] = useState(techName);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
@@ -68,8 +60,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderNote, setOrderNote] = useState('');
-  const [internalCatalog, setInternalCatalog] = useState<CatalogItem[]>([]);
+  const [submittedOrder, setSubmittedOrder] = useState<TechnicianOrder | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [internalCatalog, setInternalCatalog] = useState<CatalogItem[]>([]);
   const secretClicksRef = useRef<{ count: number; lastTime: number }>({ count: 0, lastTime: 0 });
 
   const handleSecretTripleTap = () => {
@@ -89,7 +83,6 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     }
   };
 
-  // Ensure catalog is initialized
   useEffect(() => {
     if (catalog && catalog.length > 0) {
       setInternalCatalog(catalog);
@@ -112,16 +105,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   const handleSaveName = (name: string) => {
     const trimmed = name.trim();
     setTechName(trimmed);
+    setTempModalName(trimmed);
     localStorage.setItem(TECH_NAME_STORAGE, trimmed);
-    setIsEditingName(false);
-  };
-
-  const handleSavePhone = (phone: string) => {
-    const clean = phone.replace(/[^0-9+]/g, '');
-    setWarehousePhone(clean);
-    localStorage.setItem(WAREHOUSE_PHONE_STORAGE, clean);
-    setIsEditingPhone(false);
-    onShowToast('success', 'Número de WhatsApp guardado');
+    setIsEditingNameHeader(false);
+    setIsEditingNameModal(false);
   };
 
   const categories = [
@@ -167,22 +154,22 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       return resultsList.slice(0, 60);
     }
 
-const POPULAR_PRIORITY_CODES = [
-  'CIN08', // Cinta teflon
-  'CIN01', // Cinta aislante negra
-  'CIN02', // Cinta aluminio
-  'DES01', // Desatorador Sapolio
-  'TRAP01', // Trapo blanco
-  'TRAP02', // Trapo color
-  'PEG01', // Pegamento PVC
-  'SIL01', // Silicona
-  'CUR06', // Curva 3/4"
-  'CUR09', // Curva 1/2"
-  'CUR07', // Curva 1"
-  'UNI47', // Union conduit 1
-  'BRA01', // Abrazadera
-  'PER01'  // Perno
-];
+    const POPULAR_PRIORITY_CODES = [
+      'CIN08', // Cinta teflon
+      'CIN01', // Cinta aislante negra
+      'CIN02', // Cinta aluminio
+      'DES01', // Desatorador Sapolio
+      'TRAP01', // Trapo blanco
+      'TRAP02', // Trapo color
+      'PEG01', // Pegamento PVC
+      'SIL01', // Silicona
+      'CUR06', // Curva 3/4"
+      'CUR09', // Curva 1/2"
+      'CUR07', // Curva 1"
+      'UNI47', // Union conduit 1
+      'BRA01', // Abrazadera
+      'PER01'  // Perno
+    ];
 
     if (selectedCategory !== 'TODOS') {
       const famKey = selectedCategory.split('=')[1] || selectedCategory;
@@ -260,67 +247,40 @@ const POPULAR_PRIORITY_CODES = [
   const handleClearCart = () => {
     setCart([]);
     setIsCartOpen(false);
+    setSubmittedOrder(null);
     onShowToast('info', 'Carrito vaciado');
   };
 
-  const generateWhatsAppMessage = () => {
-    const dateStr = new Date().toLocaleDateString('es-PE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    let msg = `*SOLICITUD DE MATERIALES - CAMPO*\n`;
-    msg += `------------------------------------\n`;
-    msg += `*Técnico:* ${techName ? techName.toUpperCase() : 'NO ESPECIFICADO'}\n`;
-    msg += `*Fecha/Hora:* ${dateStr}\n`;
-    if (orderNote.trim()) {
-      msg += `*Nota:* ${orderNote.trim()}\n`;
-    }
-    msg += `------------------------------------\n\n`;
-    msg += `*DETALLE DEL PEDIDO:*\n`;
-
-    cart.forEach((c, idx) => {
-      msg += `${idx + 1}. [${c.item.cod_arti}] ${c.item.descripcion}\n`;
-      msg += `   *Cantidad:* ${c.quantity} ${c.item.unidad || 'UND'}`;
-      if (c.item.ubicacion) {
-        msg += ` | *Ubicación:* ${c.item.ubicacion}`;
-      }
-      msg += `\n`;
-    });
-
-    const totalUnits = cart.reduce((acc, c) => acc + c.quantity, 0);
-    msg += `\n------------------------------------\n`;
-    msg += `*Total de Artículos:* ${cart.length} (${totalUnits} unidades)\n`;
-    msg += `_Enviado desde el Sistema de Pedidos de Campo_`;
-
-    return msg;
-  };
-
-  const handleSendWhatsApp = () => {
+  const handleSendOrderToWarehouse = () => {
     if (cart.length === 0) {
       onShowToast('warning', 'El carrito está vacío', 'Agrega al menos un artículo antes de enviar.');
       return;
     }
 
     if (!techName.trim()) {
-      setIsEditingName(true);
-      onShowToast('warning', 'Nombre requerido', 'Por favor ingresa tu nombre de técnico arriba.');
+      setIsEditingNameModal(true);
+      setTempModalName('');
+      onShowToast('warning', 'Nombre requerido', 'Por favor ingresa tu nombre de técnico para registrar la solicitud.');
       return;
     }
 
-    const message = generateWhatsAppMessage();
-    const encodedMessage = encodeURIComponent(message);
-
-    const activePhone = (warehousePhone || ENV_DEFAULT_PHONE || '').replace(/[^0-9]/g, '');
-    const waUrl = activePhone
-      ? `https://wa.me/${activePhone}?text=${encodedMessage}`
-      : `https://wa.me/?text=${encodedMessage}`;
-
-    window.open(waUrl, '_blank');
-    onShowToast('success', 'Abriendo WhatsApp...', 'Revisa el pedido y presiona enviar.');
+    setIsSubmitting(true);
+    try {
+      const created = createTechnicianOrder(techName, cart, orderNote);
+      setSubmittedOrder(created);
+      setCart([]);
+      setOrderNote('');
+      onShowToast(
+        'success',
+        '¡Solicitud enviada al Almacén!',
+        `Código ${created.orderNumber} recibido en el panel de almacén.`
+      );
+    } catch (e: any) {
+      console.error(e);
+      onShowToast('error', 'Error al enviar pedido', e.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalItemsCount = cart.reduce((acc, c) => acc + c.quantity, 0);
@@ -359,7 +319,7 @@ const POPULAR_PRIORITY_CODES = [
                 <User className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="text-neutral-400 font-medium">Técnico:</span>
               </div>
-              {isEditingName ? (
+              {isEditingNameHeader ? (
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -386,7 +346,7 @@ const POPULAR_PRIORITY_CODES = [
               ) : (
                 <button
                   type="button"
-                  onClick={() => setIsEditingName(true)}
+                  onClick={() => setIsEditingNameHeader(true)}
                   className="flex items-center gap-2 font-bold text-sm text-white hover:text-neutral-200 cursor-pointer"
                 >
                   <span className="text-sm sm:text-base font-extrabold text-white">
@@ -484,7 +444,6 @@ const POPULAR_PRIORITY_CODES = [
             {searchResults.map((item) => {
               const qtyInCart = getItemQuantityInCart(item.cod_arti);
               const imgUrl = getProductImageUrl(item);
-              const hasStock = item.stock > 0;
 
               return (
                 <div
@@ -562,12 +521,15 @@ const POPULAR_PRIORITY_CODES = [
       </main>
 
       {/* Floating Bottom Cart Bar */}
-      {cart.length > 0 && (
+      {cart.length > 0 && !isCartOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-40 p-4 bg-gradient-to-t from-neutral-950 via-neutral-950/95 to-transparent pointer-events-none">
           <div className="max-w-md mx-auto pointer-events-auto">
             <button
               type="button"
-              onClick={() => setIsCartOpen(true)}
+              onClick={() => {
+                setSubmittedOrder(null);
+                setIsCartOpen(true);
+              }}
               className="w-full py-3.5 px-5 bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-black font-extrabold text-sm rounded-2xl shadow-xl transition-all flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
@@ -594,180 +556,240 @@ const POPULAR_PRIORITY_CODES = [
               <div className="flex items-center gap-2.5">
                 <ShoppingBag className="w-5 h-5 text-emerald-400" />
                 <h3 className="font-bold text-base text-white">
-                  Resumen de Solicitud ({cart.length} artículos)
+                  {submittedOrder ? 'Solicitud Confirmada' : `Resumen de Solicitud (${cart.length} artículos)`}
                 </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setIsCartOpen(false)}
+                onClick={() => {
+                  setIsCartOpen(false);
+                  setSubmittedOrder(null);
+                }}
                 className="p-1.5 text-neutral-400 hover:text-white rounded-lg bg-neutral-800 hover:bg-neutral-700 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Modal Scrollable Items List */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-              {/* Technician Info Box */}
-              <div className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-neutral-300">
-                  <User className="w-4 h-4 text-neutral-400" />
-                  <span>
-                    Técnico: <strong className="text-white">{techName || 'No especificado'}</strong>
-                  </span>
+            {/* Modal Body */}
+            {submittedOrder ? (
+              /* SUCCESS STATE */
+              <div className="p-6 sm:p-8 text-center space-y-5">
+                <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mx-auto flex items-center justify-center shadow-lg animate-bounce">
+                  <CheckCircle2 className="w-9 h-9" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingName(true)}
-                  className="text-emerald-400 hover:underline text-[11px] font-semibold cursor-pointer"
-                >
-                  Cambiar
-                </button>
-              </div>
 
-              {/* Items List */}
-              <div className="space-y-2.5">
-                {cart.map((c) => {
-                  const imgUrl = getProductImageUrl(c.item);
-                  return (
-                    <div
-                      key={c.item.cod_arti}
-                      className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center gap-3"
-                    >
-                      <img
-                        src={imgUrl}
-                        alt={c.item.descripcion}
-                        className="w-12 h-12 rounded-lg object-cover bg-neutral-800 shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{c.item.descripcion}</p>
-                        <p className="text-[11px] font-mono text-neutral-400">
-                          [{c.item.cod_arti}] • {c.item.unidad || 'UND'}
-                        </p>
-                      </div>
-
-                      {/* Stepper */}
-                      <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-0.5 gap-1">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity - 1)}
-                          className="w-6 h-6 rounded bg-neutral-800 text-white flex items-center justify-center text-xs cursor-pointer"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="w-5 text-center font-mono font-bold text-xs text-emerald-400">
-                          {c.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity + 1)}
-                          className="w-6 h-6 rounded bg-white text-black font-bold flex items-center justify-center text-xs cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveFromCart(c.item.cod_arti)}
-                        className="p-1.5 text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
-                        title="Eliminar artículo"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Order Note */}
-              <div>
-                <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5">
-                  Nota u Observación (Opcional):
-                </label>
-                <input
-                  type="text"
-                  value={orderNote}
-                  onChange={(e) => setOrderNote(e.target.value)}
-                  placeholder="Ej: Piso 3, urgente, proyecto central..."
-                  className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:border-neutral-500 outline-none"
-                />
-              </div>
-
-              {/* Phone config */}
-              <div className="pt-2 border-t border-neutral-800">
-                <div className="flex items-center justify-between text-xs text-neutral-400 mb-1.5">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>WhatsApp Almacén:</span>
+                <div className="space-y-1.5">
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-mono font-bold bg-neutral-800 text-emerald-400 border border-neutral-700">
+                    {submittedOrder.orderNumber}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingPhone(!isEditingPhone)}
-                    className="text-[11px] text-neutral-400 hover:text-white underline cursor-pointer"
-                  >
-                    {isEditingPhone ? 'Cerrar' : warehousePhone ? warehousePhone : 'Configurar número'}
-                  </button>
+                  <h4 className="text-xl font-extrabold text-white">
+                    ¡Pedido Enviado al Almacén!
+                  </h4>
+                  <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                    Tu solicitud ha llegado directamente al panel de pedidos del almacén para su despacho.
+                  </p>
                 </div>
-                {isEditingPhone && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <input
-                      type="text"
-                      defaultValue={warehousePhone}
-                      placeholder="Ej: +51 987 654 321"
-                      id="phone_input_field"
-                      className="flex-1 px-3 py-2 bg-neutral-950 border border-neutral-700 rounded-xl text-xs text-white outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const input = document.getElementById('phone_input_field') as HTMLInputElement | null;
-                        if (input) handleSavePhone(input.value);
-                      }}
-                      className="px-4 py-2 bg-white text-black font-bold text-xs rounded-xl cursor-pointer"
-                    >
-                      Guardar
-                    </button>
+
+                <div className="p-4 bg-neutral-950 rounded-2xl border border-neutral-800 text-left space-y-2 text-xs">
+                  <div className="flex justify-between text-neutral-400">
+                    <span>Técnico:</span>
+                    <strong className="text-white">{submittedOrder.technicianName}</strong>
                   </div>
-                )}
-              </div>
-            </div>
+                  <div className="flex justify-between text-neutral-400">
+                    <span>Total artículos:</span>
+                    <strong className="text-white">
+                      {submittedOrder.totalItems} ({submittedOrder.totalUnits} unidades)
+                    </strong>
+                  </div>
+                  {submittedOrder.note && (
+                    <div className="flex justify-between text-neutral-400">
+                      <span>Nota:</span>
+                      <span className="text-neutral-200 italic">{submittedOrder.note}</span>
+                    </div>
+                  )}
+                </div>
 
-            {/* Modal Footer / WhatsApp Primary Action */}
-            <div className="p-4 sm:p-5 bg-neutral-950 border-t border-neutral-800 space-y-2.5">
-              <button
-                type="button"
-                onClick={handleSendWhatsApp}
-                className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-black font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Send className="w-4 h-4 fill-black" />
-                <span>Enviar Pedido por WhatsApp</span>
-              </button>
-
-              <div className="flex items-center justify-between pt-1">
                 <button
                   type="button"
                   onClick={() => {
-                    const msg = generateWhatsAppMessage();
-                    navigator.clipboard.writeText(msg);
-                    onShowToast('success', 'Texto copiado al portapapeles');
+                    setSubmittedOrder(null);
+                    setIsCartOpen(false);
                   }}
-                  className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 py-1 cursor-pointer"
+                  className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm rounded-xl shadow-lg transition-all cursor-pointer"
                 >
-                  <ClipboardCopy className="w-3.5 h-3.5" />
-                  <span>Copiar texto limpio</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleClearCart}
-                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Vaciar</span>
+                  Entendido / Hacer Otro Pedido
                 </button>
               </div>
-            </div>
+            ) : (
+              /* REGULAR CART FLOW */
+              <>
+                {/* Modal Scrollable Items List */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                  {/* Technician Info Box with Inline Editing */}
+                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800">
+                    {isEditingNameModal ? (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSaveName(tempModalName);
+                        }}
+                        className="space-y-2"
+                      >
+                        <label className="block text-[11px] font-semibold text-neutral-400">
+                          Tu Nombre o Código de Técnico:
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={tempModalName}
+                            onChange={(e) => setTempModalName(e.target.value)}
+                            placeholder="Escribe tu nombre..."
+                            autoFocus
+                            className="flex-1 px-3.5 py-2 bg-neutral-900 border border-emerald-500 rounded-xl text-xs sm:text-sm font-bold text-white outline-none"
+                          />
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl cursor-pointer shrink-0"
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTempModalName(techName);
+                              setIsEditingNameModal(false);
+                            }}
+                            className="p-2 text-neutral-400 hover:text-white rounded-xl bg-neutral-800 cursor-pointer"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-neutral-800 text-emerald-400 flex items-center justify-center">
+                            <User className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-[10px] uppercase font-semibold text-neutral-500 block">
+                              Técnico Responsable
+                            </span>
+                            <span className="text-xs sm:text-sm font-bold text-white">
+                              {techName || <span className="text-amber-400 italic">No especificado</span>}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTempModalName(techName);
+                            setIsEditingNameModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-emerald-400 text-xs font-bold rounded-lg transition-colors cursor-pointer border border-neutral-700"
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Items List */}
+                  <div className="space-y-2.5">
+                    {cart.map((c) => {
+                      const imgUrl = getProductImageUrl(c.item);
+                      return (
+                        <div
+                          key={c.item.cod_arti}
+                          className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center gap-3"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={c.item.descripcion}
+                            className="w-12 h-12 rounded-lg object-cover bg-neutral-800 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-white truncate">{c.item.descripcion}</p>
+                            <p className="text-[11px] font-mono text-neutral-400">
+                              [{c.item.cod_arti}] • {c.item.unidad || 'UND'}
+                            </p>
+                          </div>
+
+                          {/* Stepper */}
+                          <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-0.5 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity - 1)}
+                              className="w-6 h-6 rounded bg-neutral-800 text-white flex items-center justify-center text-xs cursor-pointer"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="w-5 text-center font-mono font-bold text-xs text-emerald-400">
+                              {c.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity + 1)}
+                              className="w-6 h-6 rounded bg-white text-black font-bold flex items-center justify-center text-xs cursor-pointer"
+                            >
+                              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFromCart(c.item.cod_arti)}
+                            className="p-1.5 text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
+                            title="Eliminar artículo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Order Note */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5">
+                      Nota u Observación (Opcional):
+                    </label>
+                    <input
+                      type="text"
+                      value={orderNote}
+                      onChange={(e) => setOrderNote(e.target.value)}
+                      placeholder="Ej: Piso 3, urgente, proyecto central..."
+                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:border-neutral-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Modal Footer / Direct Warehouse Submission */}
+                <div className="p-4 sm:p-5 bg-neutral-950 border-t border-neutral-800 space-y-2.5">
+                  <button
+                    type="button"
+                    disabled={isSubmitting || cart.length === 0}
+                    onClick={handleSendOrderToWarehouse}
+                    className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 active:scale-98 disabled:opacity-50 text-black font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                  >
+                    <Package className="w-4 h-4 stroke-[2.5]" />
+                    <span>Enviar Pedido al Almacén</span>
+                  </button>
+
+                  <div className="flex items-center justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={handleClearCart}
+                      className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Vaciar Carrito</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
