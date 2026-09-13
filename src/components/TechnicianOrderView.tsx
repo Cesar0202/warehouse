@@ -460,10 +460,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                       src={imgUrl}
                       alt={item.descripcion}
                       loading="lazy"
-                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-contain p-1 bg-neutral-900"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=300&auto=format&fit=crop&q=80';
+                        (e.target as HTMLImageElement).src = getProductImageUrl({ descripcion: item.descripcion, cod_arti: item.cod_arti });
                       }}
                     />
                     <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-950/90 text-neutral-300 border border-neutral-800">
@@ -707,7 +707,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           <img
                             src={imgUrl}
                             alt={c.item.descripcion}
-                            className="w-12 h-12 rounded-lg object-cover bg-neutral-800 shrink-0"
+                            referrerPolicy="no-referrer"
+                            className="w-12 h-12 rounded-lg object-contain p-1 bg-neutral-900 border border-neutral-800 shrink-0"
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-white truncate">{c.item.descripcion}</p>

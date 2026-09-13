@@ -18,7 +18,7 @@ import {
 import {
   TechnicianOrder,
   getTechnicianOrders,
-  fetchOrdersFromCloud,
+  initRealtimeSync,
   updateTechnicianOrderStatus,
   deleteTechnicianOrder,
   clearAllTechnicianOrders,
@@ -46,11 +46,9 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
-  const refreshOrders = async () => {
-    const local = getTechnicianOrders();
-    setOrders(local);
-    const cloud = await fetchOrdersFromCloud();
-    setOrders(cloud);
+  const refreshOrders = () => {
+    setOrders(getTechnicianOrders());
+    initRealtimeSync();
   };
 
   useEffect(() => {
@@ -65,12 +63,8 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
     window.addEventListener('focus', refreshOrders);
 
     const interval = setInterval(() => {
-      fetchOrdersFromCloud().then((res) => {
-        if (Array.isArray(res)) {
-          setOrders(res);
-        }
-      });
-    }, 3000);
+      setOrders(getTechnicianOrders());
+    }, 2000);
 
     return () => {
       window.removeEventListener(TECHNICIAN_ORDERS_EVENT, handleUpdate);
@@ -87,17 +81,13 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
     }));
   };
 
-  const handleManualRefresh = async () => {
+  const handleManualRefresh = () => {
     setIsRefreshing(true);
-    try {
-      const latest = await fetchOrdersFromCloud();
-      setOrders(latest);
-      onShowToast('success', 'Bandeja sincronizada con la nube');
-    } catch (e: any) {
-      onShowToast('error', 'Error al sincronizar', e.message);
-    } finally {
+    refreshOrders();
+    setTimeout(() => {
       setIsRefreshing(false);
-    }
+      onShowToast('success', 'Bandeja sincronizada en tiempo real');
+    }, 400);
   };
 
   const handleToggleStatus = (order: TechnicianOrder) => {

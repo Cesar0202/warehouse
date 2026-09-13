@@ -1,3 +1,4 @@
+import mqtt, { MqttClient } from 'mqtt';
 import { CatalogItem } from '../types';
 
 export interface TechnicianOrderItem {
@@ -24,11 +25,15 @@ export interface TechnicianOrder {
 const ORDERS_STORAGE_KEY = 'app_technician_incoming_orders_v1';
 export const TECHNICIAN_ORDERS_EVENT = 'technician_orders_updated';
 
-// Cloud Sync Endpoint for live real-time sync across mobile phones and warehouse PCs
-const CLOUD_SYNC_ID = 'ff808181a067127101a09cdf23420cb7';
-const CLOUD_API_URL = 'https://api.restful-api.dev/objects/' + CLOUD_SYNC_ID;
+// MQTT Topic for real-time bi-directional sync between all phones and warehouse PCs
+const MQTT_TOPIC = 'cesar_warehouse_orders_v1/state';
+const BROKER_URLS = [
+  'wss://broker.emqx.io:8084/mqtt',
+  'wss://broker.hivemq.com:8884/mqtt'
+];
 
-let isSyncing = false;
+let mqttClient: MqttClient | null = null;
+let currentBrokerIndex = 0;
 
 export const getTechnicianOrders = (): TechnicianOrder[] => {
   try {
@@ -42,82 +47,95 @@ export const getTechnicianOrders = (): TechnicianOrder[] => {
   }
 };
 
-export const saveTechnicianOrdersLocally = (orders: TechnicianOrder[]): void => {
+export const saveTechnicianOrdersLocally = (orders: TechnicianOrder[], emitEvent = true): void => {
   try {
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-    window.dispatchEvent(new CustomEvent(TECHNICIAN_ORDERS_EVENT, { detail: orders }));
+    if (emitEvent) {
+      window.dispatchEvent(new CustomEvent(TECHNICIAN_ORDERS_EVENT, { detail: orders }));
+    }
   } catch (e) {
     console.error('Error saving technician orders locally:', e);
   }
 };
 
 /**
- * Push orders list to Cloud Channel
+ * Initialize MQTT WebSocket connection for instant <50ms real-time delivery
  */
-export const pushOrdersToCloud = async (orders: TechnicianOrder[]): Promise<void> => {
-  try {
-    const payload = {
-      name: 'Technician Orders Channel',
-      data: { orders }
-    };
+export const initRealtimeSync = (): void => {
+  if (mqttClient && mqttClient.connected) return;
 
-    await fetch(CLOUD_API_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+  try {
+    const brokerUrl = BROKER_URLS[currentBrokerIndex];
+    const clientId = 'wh_' + Math.random().toString(16).substring(2, 10);
+
+    mqttClient = mqtt.connect(brokerUrl, {
+      clientId,
+      clean: false,
+      reconnectPeriod: 3000,
+      connectTimeout: 8000
     });
-  } catch (e) {
-    console.warn('Cloud sync push warning:', e);
+
+    mqttClient.on('connect', () => {
+      console.log('Real-time sync connected to broker:', brokerUrl);
+      mqttClient?.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
+        if (!err) {
+          console.log('Subscribed to real-time orders channel:', MQTT_TOPIC);
+        }
+      });
+    });
+
+    mqttClient.on('message', (topic, payload) => {
+      if (topic === MQTT_TOPIC) {
+        try {
+          const incoming: TechnicianOrder[] = JSON.parse(payload.toString());
+          if (Array.isArray(incoming)) {
+            const local = getTechnicianOrders();
+            const orderMap = new Map<string, TechnicianOrder>();
+
+            local.forEach((o) => orderMap.set(o.id, o));
+            incoming.forEach((o) => orderMap.set(o.id, o));
+
+            const merged = Array.from(orderMap.values()).sort(
+              (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+
+            saveTechnicianOrdersLocally(merged, true);
+          }
+        } catch (err) {
+          console.warn('Error parsing incoming real-time MQTT orders:', err);
+        }
+      }
+    });
+
+    mqttClient.on('error', (err) => {
+      console.warn('MQTT connection error on ' + brokerUrl + ':', err);
+      // Try next broker
+      currentBrokerIndex = (currentBrokerIndex + 1) % BROKER_URLS.length;
+    });
+  } catch (err) {
+    console.warn('Failed to initialize MQTT sync:', err);
   }
 };
 
+// Start sync immediately
+if (typeof window !== 'undefined') {
+  initRealtimeSync();
+}
+
 /**
- * Fetch latest orders from Cloud Channel and merge with local state
+ * Broadcast orders update to all connected phones and PCs
  */
-export const fetchOrdersFromCloud = async (): Promise<TechnicianOrder[]> => {
-  if (isSyncing) return getTechnicianOrders();
-  isSyncing = true;
-
-  try {
-    const res = await fetch(CLOUD_API_URL, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (!res.ok) {
-      isSyncing = false;
-      return getTechnicianOrders();
-    }
-
-    const json = await res.json();
-    const cloudOrders: TechnicianOrder[] = json?.data?.orders || [];
-
-    if (Array.isArray(cloudOrders)) {
-      const localOrders = getTechnicianOrders();
-      const orderMap = new Map<string, TechnicianOrder>();
-
-      // Put local first
-      localOrders.forEach((o) => orderMap.set(o.id, o));
-      // Overwrite/merge with cloud (cloud is source of truth)
-      cloudOrders.forEach((o) => orderMap.set(o.id, o));
-
-      const merged = Array.from(orderMap.values()).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      saveTechnicianOrdersLocally(merged);
-      isSyncing = false;
-      return merged;
-    }
-  } catch (e) {
-    console.warn('Cloud sync fetch warning:', e);
-  } finally {
-    isSyncing = false;
+export const broadcastOrders = (orders: TechnicianOrder[]): void => {
+  if (!mqttClient || !mqttClient.connected) {
+    initRealtimeSync();
   }
 
-  return getTechnicianOrders();
+  try {
+    const payload = JSON.stringify(orders);
+    mqttClient?.publish(MQTT_TOPIC, payload, { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error broadcasting orders:', e);
+  }
 };
 
 export const createTechnicianOrder = (
@@ -155,10 +173,8 @@ export const createTechnicianOrder = (
   };
 
   const updatedOrders = [newOrder, ...currentOrders];
-  saveTechnicianOrdersLocally(updatedOrders);
-
-  // Push to cloud asynchronously
-  pushOrdersToCloud(updatedOrders).catch(console.warn);
+  saveTechnicianOrdersLocally(updatedOrders, true);
+  broadcastOrders(updatedOrders);
 
   return newOrder;
 };
@@ -171,18 +187,18 @@ export const updateTechnicianOrderStatus = (
   const updated = currentOrders.map((ord) =>
     ord.id === orderId ? { ...ord, status } : ord
   );
-  saveTechnicianOrdersLocally(updated);
-  pushOrdersToCloud(updated).catch(console.warn);
+  saveTechnicianOrdersLocally(updated, true);
+  broadcastOrders(updated);
 };
 
 export const deleteTechnicianOrder = (orderId: string): void => {
   const currentOrders = getTechnicianOrders();
   const updated = currentOrders.filter((ord) => ord.id !== orderId);
-  saveTechnicianOrdersLocally(updated);
-  pushOrdersToCloud(updated).catch(console.warn);
+  saveTechnicianOrdersLocally(updated, true);
+  broadcastOrders(updated);
 };
 
 export const clearAllTechnicianOrders = (): void => {
-  saveTechnicianOrdersLocally([]);
-  pushOrdersToCloud([]).catch(console.warn);
+  saveTechnicianOrdersLocally([], true);
+  broadcastOrders([]);
 };

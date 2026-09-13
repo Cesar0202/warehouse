@@ -5,8 +5,7 @@
     "familia": "001=CURVAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 1,
-    "ubicacion": "A2101",
-    "foto": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": "A2101"
   },
   {
     "cod_arti": "CUR06",
@@ -14,8 +13,7 @@
     "familia": "001=CURVAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 13,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "CUR07",
@@ -23,8 +21,7 @@
     "familia": "001=CURVAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 19,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "CUR09",
@@ -32,8 +29,7 @@
     "familia": "001=CURVAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 70,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "DREY005",
@@ -129,8 +125,7 @@
     "familia": "001=CURVAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 12,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "CAM100",
@@ -1138,8 +1133,7 @@
     "familia": "011=CINTAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 14,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "CIN02",
@@ -1147,8 +1141,7 @@
     "familia": "011=CINTAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "CIN03",
@@ -1188,8 +1181,7 @@
     "familia": "011=CINTAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "CIN09",
@@ -16653,8 +16645,7 @@
     "familia": "090=TRAPO",
     "unidad": "001=KILOGRAMO",
     "stock": 51.78,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "TRAP02",
@@ -16662,8 +16653,7 @@
     "familia": "090=TRAPO",
     "unidad": "001=KILOGRAMO",
     "stock": 94.64,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "TOC01",
@@ -16903,8 +16893,7 @@
     "familia": "096=PEGAMENTOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "PEG02",
@@ -17216,8 +17205,7 @@
     "familia": "097=PERNOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "PER02",
@@ -18545,8 +18533,7 @@
     "familia": "110=SILICONAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "SIL04",
@@ -33794,8 +33781,7 @@
     "familia": "301=LIMPIEZA",
     "unidad": "009=GALON INGLES (4,545956L)",
     "stock": 19,
-    "ubicacion": "",
-    "foto": "https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=350&auto=format&fit=crop&q=80"
+    "ubicacion": ""
   },
   {
     "cod_arti": "DES02",

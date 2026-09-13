@@ -1,87 +1,62 @@
 import { CatalogItem } from '../types';
 
-export const DEFAULT_PRODUCT_IMAGES: Record<string, string> = {
-  cinta_aislante_negra: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=350&auto=format&fit=crop&q=80',
-  cinta_aluminio: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=350&auto=format&fit=crop&q=80',
-  cinta_teflon: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80',
-  cinta_masking: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=350&auto=format&fit=crop&q=80',
-  cinta_vulcanizante: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=350&auto=format&fit=crop&q=80',
-
-  desatorador: 'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=350&auto=format&fit=crop&q=80',
-  trapo_blanco: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80',
-  trapo_color: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80',
-
-  pegamento: 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=350&auto=format&fit=crop&q=80',
-  silicona: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=350&auto=format&fit=crop&q=80',
-
-  curva_conduit: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80',
-  union_conduit: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=350&auto=format&fit=crop&q=80',
-  tuberia_conduit: 'https://images.unsplash.com/photo-1541888946425-d0fbb186c5f3?w=350&auto=format&fit=crop&q=80',
-
-  abrazadera: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=350&auto=format&fit=crop&q=80',
-  perno: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?w=350&auto=format&fit=crop&q=80',
-  herramientas: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=350&auto=format&fit=crop&q=80',
-  cables: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=350&auto=format&fit=crop&q=80',
-  valvulas: 'https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=350&auto=format&fit=crop&q=80'
-};
-
-export const CODE_IMAGES: Record<string, string> = {
-  CIN08: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=350&auto=format&fit=crop&q=80',
-  CIN01: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=350&auto=format&fit=crop&q=80',
-  CIN02: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?w=350&auto=format&fit=crop&q=80',
-  DES01: 'https://images.unsplash.com/photo-1585421514284-efb74c2b69ba?w=350&auto=format&fit=crop&q=80',
-  TRAP01: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80',
-  TRAP02: 'https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=350&auto=format&fit=crop&q=80',
-  PEG01: 'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=350&auto=format&fit=crop&q=80',
-  SIL01: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=350&auto=format&fit=crop&q=80',
-  CUR01: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80',
-  CUR06: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80',
-  CUR07: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80',
-  CUR09: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=350&auto=format&fit=crop&q=80',
-  UNI47: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=350&auto=format&fit=crop&q=80',
-  BRA01: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=350&auto=format&fit=crop&q=80',
-  PER01: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?w=350&auto=format&fit=crop&q=80'
+export const SVG_IMAGES = {
+  cinta_aislante: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2260%22%20rx%3D%2242%22%20ry%3D%2232%22%20fill%3D%22%2327272a%22%20stroke%3D%22%2352525b%22%20stroke-width%3D%223%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2240%22%20ry%3D%2228%22%20fill%3D%22%2309090b%22%20stroke%3D%22%233f3f46%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2220%22%20ry%3D%2214%22%20fill%3D%22%2327272a%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2212%22%20ry%3D%228%22%20fill%3D%22%2318181b%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%2322c55e%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3ECINTA%20AISLANTE%3C%2Ftext%3E%3C%2Fsvg%3E",
+  cinta_teflon: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2260%22%20rx%3D%2242%22%20ry%3D%2232%22%20fill%3D%22%23e4e4e7%22%20stroke%3D%22%23a1a1aa%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2240%22%20ry%3D%2228%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2220%22%20ry%3D%2214%22%20fill%3D%22%233b82f6%22%20stroke%3D%22%232563eb%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2212%22%20ry%3D%228%22%20fill%3D%22%2318181b%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%2338bdf8%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3ECINTA%20TEFL%C3%93N%3C%2Ftext%3E%3C%2Fsvg%3E",
+  cinta_aluminio: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2260%22%20rx%3D%2242%22%20ry%3D%2232%22%20fill%3D%22%2371717a%22%20stroke%3D%22%23a1a1aa%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2240%22%20ry%3D%2228%22%20fill%3D%22%23d4d4d8%22%20stroke%3D%22%23f4f4f5%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2220%22%20ry%3D%2214%22%20fill%3D%22%2352525b%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%2260%22%20cy%3D%2256%22%20rx%3D%2212%22%20ry%3D%228%22%20fill%3D%22%2318181b%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%23cbd5e1%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3ECINTA%20ALUMINIO%3C%2Ftext%3E%3C%2Fsvg%3E",
+  desatorador: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Crect%20x%3D%2252%22%20y%3D%2220%22%20width%3D%2216%22%20height%3D%2214%22%20rx%3D%222%22%20fill%3D%22%23ef4444%22%2F%3E%3Crect%20x%3D%2255%22%20y%3D%2234%22%20width%3D%2210%22%20height%3D%2210%22%20fill%3D%22%23facc15%22%2F%3E%3Cpath%20d%3D%22M42%2044%20Q60%2040%2078%2044%20L75%2092%20Q60%2096%2045%2092%20Z%22%20fill%3D%22%23eab308%22%20stroke%3D%22%23ca8a04%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%2247%22%20y%3D%2255%22%20width%3D%2226%22%20height%3D%2222%22%20rx%3D%223%22%20fill%3D%22%23ffffff%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2268%22%20text-anchor%3D%22middle%22%20fill%3D%22%23dc2626%22%20font-family%3D%22sans-serif%22%20font-size%3D%227%22%20font-weight%3D%22bold%22%3EDRANO%3C%2Ftext%3E%3Ctext%20x%3D%2260%22%20y%3D%2274%22%20text-anchor%3D%22middle%22%20fill%3D%22%231e3a8a%22%20font-family%3D%22sans-serif%22%20font-size%3D%225%22%3ESAPOLIO%3C%2Ftext%3E%3Ctext%20x%3D%2260%22%20y%3D%22108%22%20text-anchor%3D%22middle%22%20fill%3D%22%23eab308%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3EDESATORADOR%3C%2Ftext%3E%3C%2Fsvg%3E",
+  trapo: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cpath%20d%3D%22M35%2045%20Q50%2030%2075%2038%20Q90%2050%2082%2072%20Q75%2090%2050%2085%20Q30%2080%2035%2045%20Z%22%20fill%3D%22%23f4f4f5%22%20stroke%3D%22%23a1a1aa%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M42%2052%20Q60%2042%2072%2058%20Q65%2078%2048%2070%20Z%22%20fill%3D%22%23e4e4e7%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%23e2e8f0%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3ETRAPO%20INDUSTRIAL%3C%2Ftext%3E%3C%2Fsvg%3E",
+  curva: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cpath%20d%3D%22M35%2085%20L35%2060%20Q35%2035%2060%2035%20L85%2035%22%20fill%3D%22none%22%20stroke%3D%22%23d4d4d8%22%20stroke-width%3D%2214%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M35%2085%20L35%2060%20Q35%2035%2060%2035%20L85%2035%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%2338bdf8%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3ECURVA%20CONDUIT%3C%2Ftext%3E%3C%2Fsvg%3E",
+  union: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Crect%20x%3D%2240%22%20y%3D%2242%22%20width%3D%2240%22%20height%3D%2236%22%20rx%3D%224%22%20fill%3D%22%23a1a1aa%22%20stroke%3D%22%23e4e4e7%22%20stroke-width%3D%222%22%2F%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2260%22%20r%3D%223%22%20fill%3D%22%2318181b%22%2F%3E%3Ccircle%20cx%3D%2270%22%20cy%3D%2260%22%20r%3D%223%22%20fill%3D%22%2318181b%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%23a1a1aa%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3EUNI%C3%93N%20CONDUIT%3C%2Ftext%3E%3C%2Fsvg%3E",
+  abrazadera: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cpath%20d%3D%22M25%2070%20L40%2070%20A%2020%2020%200%200%201%2080%2070%20L95%2070%22%20fill%3D%22none%22%20stroke%3D%22%23d4d4d8%22%20stroke-width%3D%226%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2270%22%20r%3D%222.5%22%20fill%3D%22%2318181b%22%2F%3E%3Ccircle%20cx%3D%2288%22%20cy%3D%2270%22%20r%3D%222.5%22%20fill%3D%22%2318181b%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%23e2e8f0%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3EABRAZADERA%3C%2Ftext%3E%3C%2Fsvg%3E",
+  pegamento: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Crect%20x%3D%2242%22%20y%3D%2238%22%20width%3D%2236%22%20height%3D%2248%22%20rx%3D%224%22%20fill%3D%22%23eab308%22%20stroke%3D%22%23ca8a04%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%2246%22%20y%3D%2228%22%20width%3D%2228%22%20height%3D%2210%22%20rx%3D%222%22%20fill%3D%22%2371717a%22%2F%3E%3Crect%20x%3D%2246%22%20y%3D%2250%22%20width%3D%2228%22%20height%3D%2222%22%20fill%3D%22%2318181b%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2264%22%20text-anchor%3D%22middle%22%20fill%3D%22%23facc15%22%20font-family%3D%22sans-serif%22%20font-size%3D%227%22%20font-weight%3D%22bold%22%3EAFRICANO%3C%2Ftext%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%23facc15%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3EPEGAMENTO%3C%2Ftext%3E%3C%2Fsvg%3E",
+  silicona: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cpolygon%20points%3D%2256%2C20%2064%2C20%2062%2C34%2058%2C34%22%20fill%3D%22%23ffffff%22%2F%3E%3Crect%20x%3D%2246%22%20y%3D%2234%22%20width%3D%2228%22%20height%3D%2256%22%20rx%3D%223%22%20fill%3D%22%23f4f4f5%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%2249%22%20y%3D%2248%22%20width%3D%2222%22%20height%3D%2226%22%20fill%3D%22%232563eb%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%2264%22%20text-anchor%3D%22middle%22%20fill%3D%22%23ffffff%22%20font-family%3D%22sans-serif%22%20font-size%3D%226%22%20font-weight%3D%22bold%22%3ESILICONA%3C%2Ftext%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%2360a5fa%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3ESILICONA%20BLANCA%3C%2Ftext%3E%3C%2Fsvg%3E",
+  perno: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cpolygon%20points%3D%2245%2C30%2075%2C30%2085%2C42%2075%2C54%2045%2C54%2035%2C42%22%20fill%3D%22%23d4d4d8%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%2254%22%20y%3D%2254%22%20width%3D%2212%22%20height%3D%2236%22%20fill%3D%22%23a1a1aa%22%2F%3E%3Cline%20x1%3D%2254%22%20y1%3D%2262%22%20x2%3D%2266%22%20y2%3D%2262%22%20stroke%3D%22%2352525b%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2254%22%20y1%3D%2270%22%20x2%3D%2266%22%20y2%3D%2270%22%20stroke%3D%22%2352525b%22%20stroke-width%3D%222%22%2F%3E%3Cline%20x1%3D%2254%22%20y1%3D%2278%22%20x2%3D%2266%22%20y2%3D%2278%22%20stroke%3D%22%2352525b%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22105%22%20text-anchor%3D%22middle%22%20fill%3D%22%23a1a1aa%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3EPERNO%3C%2Ftext%3E%3C%2Fsvg%3E",
+  general: "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20120%20120%22%20width%3D%22120%22%20height%3D%22120%22%3E%3Crect%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2216%22%20fill%3D%22%2318181b%22%2F%3E%3Cpath%20d%3D%22M60%2030%20L88%2045%20L88%2075%20L60%2090%20L32%2075%20L32%2045%20Z%22%20fill%3D%22%2327272a%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M60%2030%20L60%2090%20M60%2060%20L88%2045%20M60%2060%20L32%2045%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%2F%3E%3Ctext%20x%3D%2260%22%20y%3D%22108%22%20text-anchor%3D%22middle%22%20fill%3D%22%23a1a1aa%22%20font-family%3D%22sans-serif%22%20font-size%3D%229%22%20font-weight%3D%22bold%22%3EMATERIAL%3C%2Ftext%3E%3C%2Fsvg%3E"
 };
 
 export const getProductImageUrl = (
   item: CatalogItem | { descripcion: string; cod_arti: string; familia?: string; foto?: string; imagen?: string; image_url?: string }
 ): string => {
-  if (item.foto && item.foto.trim()) return item.foto.trim();
-  if (item.imagen && item.imagen.trim()) return item.imagen.trim();
-  if (item.image_url && item.image_url.trim()) return item.image_url.trim();
+  if (item.foto && item.foto.trim() && !item.foto.includes('unsplash')) return item.foto.trim();
+  if (item.imagen && item.imagen.trim() && !item.imagen.includes('unsplash')) return item.imagen.trim();
+  if (item.image_url && item.image_url.trim() && !item.image_url.includes('unsplash')) return item.image_url.trim();
 
   const cod = item.cod_arti.toUpperCase().trim();
-  const desc = item.descripcion.toLowerCase();
+  const desc = (item.descripcion || '').toLowerCase();
   const fam = (item.familia || '').toUpperCase();
 
-  if (CODE_IMAGES[cod]) {
-    return CODE_IMAGES[cod];
+  if (cod.startsWith('CIN08') || cod.startsWith('CIN01') || cod.startsWith('CIN03') || cod.startsWith('CIN20') || cod.startsWith('CIN21')) {
+    return SVG_IMAGES.cinta_aislante;
   }
+  if (cod.startsWith('CIN02')) return SVG_IMAGES.cinta_aluminio;
+  if (cod.startsWith('DES')) return SVG_IMAGES.desatorador;
+  if (cod.startsWith('TRAP')) return SVG_IMAGES.trapo;
+  if (cod.startsWith('PEG')) return SVG_IMAGES.pegamento;
+  if (cod.startsWith('SIL')) return SVG_IMAGES.silicona;
+  if (cod.startsWith('CUR')) return SVG_IMAGES.curva;
+  if (cod.startsWith('UNI')) return SVG_IMAGES.union;
+  if (cod.startsWith('BRA') || cod.startsWith('ABR')) return SVG_IMAGES.abrazadera;
+  if (cod.startsWith('PER')) return SVG_IMAGES.perno;
 
-  if (desc.includes('aluminio') && desc.includes('cinta')) return DEFAULT_PRODUCT_IMAGES.cinta_aluminio;
-  if (desc.includes('teflon') || desc.includes('ptfe')) return DEFAULT_PRODUCT_IMAGES.cinta_teflon;
-  if (desc.includes('masking')) return DEFAULT_PRODUCT_IMAGES.cinta_masking;
+  if (desc.includes('aluminio') && desc.includes('cinta')) return SVG_IMAGES.cinta_aluminio;
+  if (desc.includes('teflon') || desc.includes('ptfe')) return SVG_IMAGES.cinta_teflon;
   if (desc.includes('aislante') || desc.includes('templex') || desc.includes('super 33') || desc.includes('vulcaniz')) {
-    return DEFAULT_PRODUCT_IMAGES.cinta_aislante_negra;
+    return SVG_IMAGES.cinta_aislante;
   }
-  if (desc.includes('desatorador') || desc.includes('sapolio') || cod.startsWith('DES')) return DEFAULT_PRODUCT_IMAGES.desatorador;
-  if (desc.includes('trapo') && desc.includes('blanco')) return DEFAULT_PRODUCT_IMAGES.trapo_blanco;
-  if (desc.includes('trapo')) return DEFAULT_PRODUCT_IMAGES.trapo_color;
-  if (desc.includes('silicona') || desc.includes('sellador')) return DEFAULT_PRODUCT_IMAGES.silicona;
-  if (desc.includes('pegamento') || desc.includes('africano') || desc.includes('cemento')) return DEFAULT_PRODUCT_IMAGES.pegamento;
-  if (desc.includes('curva') || cod.startsWith('CUR')) return DEFAULT_PRODUCT_IMAGES.curva_conduit;
-  if (desc.includes('union') || desc.includes('unión') || cod.startsWith('UNI')) return DEFAULT_PRODUCT_IMAGES.union_conduit;
-  if (desc.includes('abrazadera') || cod.startsWith('BRA') || cod.startsWith('ABR')) return DEFAULT_PRODUCT_IMAGES.abrazadera;
-  if (desc.includes('perno') || desc.includes('tornillo') || desc.includes('tuerca') || cod.startsWith('PER')) return DEFAULT_PRODUCT_IMAGES.perno;
-  if (desc.includes('tubo') || desc.includes('conduit') || fam.includes('TUBERIA')) return DEFAULT_PRODUCT_IMAGES.tuberia_conduit;
-  if (desc.includes('cable') || desc.includes('alambre') || fam.includes('CABLE')) return DEFAULT_PRODUCT_IMAGES.cables;
-  if (desc.includes('valvula') || desc.includes('llave paso') || fam.includes('VALVULA')) return DEFAULT_PRODUCT_IMAGES.valvulas;
+  if (desc.includes('cinta') || fam.includes('CINTA')) return SVG_IMAGES.cinta_aislante;
+  if (desc.includes('desatorador') || desc.includes('sapolio') || desc.includes('drano') || fam.includes('LIMPIEZA')) {
+    return SVG_IMAGES.desatorador;
+  }
+  if (desc.includes('trapo') || fam.includes('TRAPO')) return SVG_IMAGES.trapo;
+  if (desc.includes('silicona') || desc.includes('sellador')) return SVG_IMAGES.silicona;
+  if (desc.includes('pegamento') || desc.includes('africano') || desc.includes('cemento') || fam.includes('PEGAMENTO')) {
+    return SVG_IMAGES.pegamento;
+  }
+  if (desc.includes('curva') || fam.includes('CURVA')) return SVG_IMAGES.curva;
+  if (desc.includes('union') || desc.includes('unión')) return SVG_IMAGES.union;
+  if (desc.includes('abrazadera') || fam.includes('ABRAZADERA')) return SVG_IMAGES.abrazadera;
+  if (desc.includes('perno') || desc.includes('tornillo') || desc.includes('tuerca')) return SVG_IMAGES.perno;
 
-  if (fam.includes('CINTA')) return DEFAULT_PRODUCT_IMAGES.cinta_aislante_negra;
-  if (fam.includes('CURVA')) return DEFAULT_PRODUCT_IMAGES.curva_conduit;
-  if (fam.includes('LIMPIEZA')) return DEFAULT_PRODUCT_IMAGES.desatorador;
-  if (fam.includes('PEGAMENTO')) return DEFAULT_PRODUCT_IMAGES.pegamento;
-  if (fam.includes('HERRAMIENTA')) return DEFAULT_PRODUCT_IMAGES.herramientas;
-
-  return DEFAULT_PRODUCT_IMAGES.herramientas;
+  return SVG_IMAGES.general;
 };
