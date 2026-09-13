@@ -5,10 +5,13 @@ import {
   Clock,
   CheckCircle2,
   Trash2,
-  FileCheck,
+  Printer,
+  FileSpreadsheet,
+  FileText,
   ClipboardCopy,
-  ChevronRight,
-  Search
+  Search,
+  CheckSquare,
+  AlertCircle
 } from 'lucide-react';
 import {
   TechnicianOrder,
@@ -18,21 +21,25 @@ import {
   clearAllTechnicianOrders,
   TECHNICIAN_ORDERS_EVENT
 } from '../services/technicianOrderService';
+import {
+  exportTechnicianOrderToExcel,
+  exportTechnicianOrderToCSV,
+  exportAllOrdersToExcel
+} from '../services/exportService';
 
 interface IncomingOrdersViewProps {
-  onLoadOrderToDispatch: (order: TechnicianOrder) => void;
   onShowToast: (type: 'success' | 'warning' | 'error' | 'info', title: string, msg?: string) => void;
   onSwitchToTechnician?: () => void;
 }
 
 export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
-  onLoadOrderToDispatch,
   onShowToast,
   onSwitchToTechnician
 }) => {
   const [orders, setOrders] = useState<TechnicianOrder[]>(() => getTechnicianOrders());
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'attended'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [orderToPrint, setOrderToPrint] = useState<TechnicianOrder | null>(null);
 
   const refreshOrders = () => {
     setOrders(getTechnicianOrders());
@@ -97,6 +104,41 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
     onShowToast('success', 'Detalle copiado al portapapeles');
   };
 
+  const handlePrintOrder = (order: TechnicianOrder) => {
+    setOrderToPrint(order);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  const handleExportExcel = (order: TechnicianOrder) => {
+    try {
+      exportTechnicianOrderToExcel(order);
+      onShowToast('success', 'Excel generado con éxito', `Solicitud ${order.orderNumber}`);
+    } catch (e: any) {
+      onShowToast('error', 'Error al exportar Excel', e.message);
+    }
+  };
+
+  const handleExportCSV = (order: TechnicianOrder) => {
+    try {
+      exportTechnicianOrderToCSV(order);
+      onShowToast('success', 'CSV generado con éxito', `Solicitud ${order.orderNumber}`);
+    } catch (e: any) {
+      onShowToast('error', 'Error al exportar CSV', e.message);
+    }
+  };
+
+  const handleExportAllExcel = () => {
+    if (orders.length === 0) return;
+    try {
+      exportAllOrdersToExcel(orders);
+      onShowToast('success', 'Excel con todas las solicitudes generado con éxito');
+    } catch (e: any) {
+      onShowToast('error', 'Error al exportar Excel', e.message);
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
     if (filterStatus !== 'all' && o.status !== filterStatus) return false;
     if (searchQuery.trim()) {
@@ -117,8 +159,80 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Top Banner / Stats Header */}
-      <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Printable Sheet for window.print() */}
+      {orderToPrint && (
+        <div className="hidden print:block print:w-full print:m-0 print:p-0 bg-white text-black font-sans leading-tight">
+          <div className="border-b-2 border-black pb-2 mb-3 flex items-center justify-between text-xs font-mono">
+            <div>
+              <p className="text-base font-bold tracking-tight uppercase">VALE DE SALIDA / DESPACHO DE MATERIALES</p>
+              <p className="text-[11px] text-neutral-800">
+                N° SOLICITUD: <strong>{orderToPrint.orderNumber}</strong> | FECHA:{' '}
+                {new Date(orderToPrint.createdAt).toLocaleString('es-PE')}
+              </p>
+              <p className="text-xs font-bold mt-1">
+                TÉCNICO RESPONSABLE:{' '}
+                <span className="underline uppercase">{orderToPrint.technicianName}</span>
+              </p>
+              {orderToPrint.note && (
+                <p className="text-[11px] italic mt-0.5">Nota: {orderToPrint.note}</p>
+              )}
+            </div>
+            <div className="text-right">
+              <span className="block text-xs font-bold">TOTAL ÍTEMS: {orderToPrint.totalItems}</span>
+              <span className="block text-xs text-neutral-700 font-bold">({orderToPrint.totalUnits} Unidades)</span>
+            </div>
+          </div>
+
+          <table className="w-full border-collapse border border-black text-[11px]">
+            <thead>
+              <tr className="bg-neutral-100 border-b-2 border-black font-mono font-bold uppercase">
+                <th className="border border-black py-1.5 px-2 text-center w-10">CHECK</th>
+                <th className="border border-black py-1.5 px-2 text-center w-12">CANT.</th>
+                <th className="border border-black py-1.5 px-2 text-left w-24">CÓDIGO</th>
+                <th className="border border-black py-1.5 px-2 text-left">DESCRIPCIÓN DE MATERIAL</th>
+                <th className="border border-black py-1.5 px-2 text-center w-24">UBICACIÓN</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black">
+              {orderToPrint.items.map((it, idx) => (
+                <tr key={idx} className="border-b border-black">
+                  <td className="border border-black py-1.5 px-1 text-center align-middle">
+                    <div className="w-4 h-4 border border-black inline-block align-middle" />
+                  </td>
+                  <td className="border border-black py-1.5 px-2 text-center font-mono font-bold text-sm">
+                    {it.quantity}
+                  </td>
+                  <td className="border border-black py-1.5 px-2 font-mono font-bold text-xs">
+                    {it.cod_arti}
+                  </td>
+                  <td className="border border-black py-1.5 px-2">
+                    <span className="font-bold text-xs uppercase">{it.descripcion}</span>
+                    <span className="text-[10px] text-neutral-600 font-mono ml-2">({it.unidad})</span>
+                  </td>
+                  <td className="border border-black py-1.5 px-2 text-center font-mono font-bold text-xs">
+                    {it.ubicacion || '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Signatures Footer */}
+          <div className="mt-12 pt-4 grid grid-cols-2 gap-8 text-center text-xs font-mono">
+            <div className="border-t border-black pt-2">
+              <p className="font-bold uppercase">ENTREGADO POR (ALMACÉN)</p>
+              <p className="text-[10px] text-neutral-500">Firma y Sello</p>
+            </div>
+            <div className="border-t border-black pt-2">
+              <p className="font-bold uppercase">RECIBIDO POR ({orderToPrint.technicianName.toUpperCase()})</p>
+              <p className="text-[10px] text-neutral-500">Firma y DNI</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Screen UI - Header Banner */}
+      <div className="bg-white border border-neutral-200 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
         <div>
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center font-bold">
@@ -129,15 +243,15 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                 Bandeja de Solicitudes de Campo
               </h2>
               <p className="text-xs text-neutral-500">
-                Pedidos enviados en tiempo real por los técnicos desde la aplicación móvil
+                Pedidos enviados en tiempo real por los técnicos. Imprime vales o exporta a Excel/CSV directamente.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats & Clear */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-neutral-100 p-1.5 rounded-xl border border-neutral-200 text-xs">
+        {/* Global Actions & Status Filter */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-1.5 bg-neutral-100 p-1 rounded-xl border border-neutral-200 text-xs">
             <button
               type="button"
               onClick={() => setFilterStatus('all')}
@@ -176,42 +290,54 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
           </div>
 
           {orders.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearAll}
-              className="p-2 text-neutral-400 hover:text-red-600 rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors cursor-pointer"
-              title="Vaciar todas las solicitudes"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleExportAllExcel}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                title="Descargar todas las solicitudes en un archivo Excel"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Exportar Todo Excel</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="p-2 text-neutral-400 hover:text-red-600 rounded-xl hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors cursor-pointer"
+                title="Vaciar todas las solicitudes"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>
 
       {/* Search Filter Bar */}
       {orders.length > 0 && (
-        <div className="relative">
+        <div className="relative print:hidden">
           <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filtrar por técnico, número de pedido o artículo..."
+            placeholder="Filtrar por técnico, código de material o número de pedido..."
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-xs sm:text-sm text-neutral-900 placeholder-neutral-400 focus:border-neutral-900 outline-none shadow-sm"
           />
         </div>
       )}
 
-      {/* Orders List */}
+      {/* Orders Cards List */}
       {orders.length === 0 ? (
-        <div className="bg-white border border-dashed border-neutral-300 rounded-2xl p-12 text-center space-y-3">
+        <div className="bg-white border border-dashed border-neutral-300 rounded-2xl p-12 text-center space-y-3 print:hidden">
           <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-400 mx-auto flex items-center justify-center">
             <Package className="w-6 h-6" />
           </div>
           <h3 className="font-bold text-neutral-800 text-base">No hay solicitudes en la bandeja</h3>
           <p className="text-xs text-neutral-500 max-w-md mx-auto">
-            Cuando los técnicos elijan sus materiales en su pantalla móvil y presionen{' '}
-            <strong>"Enviar Pedido al Almacén"</strong>, aparecerán aquí de forma inmediata.
+            Cuando los técnicos elijan sus materiales y presionen{' '}
+            <strong>"Enviar Pedido al Almacén"</strong> en su celular, aparecerán aquí de forma inmediata con opciones para imprimir, exportar a Excel y CSV.
           </p>
           {onSwitchToTechnician && (
             <div className="pt-2">
@@ -226,11 +352,11 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
           )}
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="bg-white border border-neutral-200 rounded-2xl p-8 text-center text-xs text-neutral-500">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-8 text-center text-xs text-neutral-500 print:hidden">
           No se encontraron pedidos con los filtros aplicados.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 print:hidden">
           {filteredOrders.map((order) => {
             const isPending = order.status === 'pending';
             const orderDate = new Date(order.createdAt).toLocaleString('es-PE', {
@@ -253,7 +379,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                 {/* Order Header */}
                 <div
                   className={`p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b ${
-                    isPending ? 'bg-amber-50/50 border-amber-200' : 'bg-neutral-50 border-neutral-200'
+                    isPending ? 'bg-amber-50/60 border-amber-200' : 'bg-neutral-50 border-neutral-200'
                   }`}
                 >
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -285,8 +411,8 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
 
                 {/* Optional Note */}
                 {order.note && (
-                  <div className="px-4 sm:px-6 py-2.5 bg-neutral-50/70 border-b border-neutral-100 text-xs text-neutral-700 flex items-start gap-2">
-                    <strong className="text-neutral-900 shrink-0">Observación / Nota:</strong>
+                  <div className="px-4 sm:px-6 py-2.5 bg-neutral-50 border-b border-neutral-100 text-xs text-neutral-700 flex items-start gap-2">
+                    <strong className="text-neutral-900 shrink-0">Nota:</strong>
                     <span className="italic">{order.note}</span>
                   </div>
                 )}
@@ -343,7 +469,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   </div>
                 </div>
 
-                {/* Card Action Footer */}
+                {/* Card Action Footer with Print, Excel, CSV, Copy, Status */}
                 <div className="px-4 sm:px-6 py-3.5 bg-neutral-50/90 border-t border-neutral-200 flex flex-wrap items-center justify-between gap-3">
                   <div className="text-xs text-neutral-600 font-medium">
                     Total: <strong className="text-neutral-900">{order.totalItems}</strong> artículos (
@@ -351,16 +477,51 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Imprimir Vale */}
+                    <button
+                      type="button"
+                      onClick={() => handlePrintOrder(order)}
+                      className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                      title="Imprimir Vale de Despacho"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Imprimir Vale</span>
+                    </button>
+
+                    {/* Exportar Excel */}
+                    <button
+                      type="button"
+                      onClick={() => handleExportExcel(order)}
+                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Exportar esta solicitud a Excel"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Excel (.xlsx)</span>
+                    </button>
+
+                    {/* Exportar CSV */}
+                    <button
+                      type="button"
+                      onClick={() => handleExportCSV(order)}
+                      className="px-2.5 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Exportar a CSV"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-neutral-600" />
+                      <span>CSV</span>
+                    </button>
+
+                    {/* Copiar texto */}
                     <button
                       type="button"
                       onClick={() => handleCopyOrderText(order)}
-                      className="px-3 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title="Copiar texto"
+                      className="px-2.5 py-1.5 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Copiar texto resumen"
                     >
                       <ClipboardCopy className="w-3.5 h-3.5" />
                       <span>Copiar</span>
                     </button>
 
+                    {/* Marcar Atendido */}
                     <button
                       type="button"
                       onClick={() => handleToggleStatus(order)}
@@ -374,16 +535,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                       <span>{isPending ? 'Marcar Atendido' : 'Reabrir'}</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => onLoadOrderToDispatch(order)}
-                      className="px-4 py-1.5 bg-neutral-900 hover:bg-black text-white rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer"
-                    >
-                      <FileCheck className="w-3.5 h-3.5" />
-                      <span>Cargar al Despacho</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-
+                    {/* Eliminar */}
                     <button
                       type="button"
                       onClick={() => handleDelete(order.id, order.orderNumber)}

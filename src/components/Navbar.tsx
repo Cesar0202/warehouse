@@ -1,6 +1,5 @@
 import React from 'react';
 import { 
-  FileText, 
   BookOpen, 
   UploadCloud, 
   Layers,
@@ -9,16 +8,14 @@ import {
   Package
 } from 'lucide-react';
 
-export type ActiveTab = 'incoming' | 'order' | 'catalog' | 'aliases' | 'upload';
+export type ActiveTab = 'incoming' | 'catalog' | 'aliases' | 'upload';
 
 interface NavbarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   catalogCount: number;
   aliasCount: number;
-  pendingOrderCount: number;
   incomingOrdersCount: number;
-  hasAIKey: boolean;
   onLogout?: () => void;
   onSwitchToTechnician?: () => void;
   onOpenSettings?: () => void;
@@ -29,7 +26,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   catalogCount,
   aliasCount,
-  pendingOrderCount,
   incomingOrdersCount,
   onLogout,
   onSwitchToTechnician,
@@ -70,11 +66,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Navigation Pill Bar */}
           <div className="w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex items-center gap-2">
             <nav className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 min-w-max">
-              {/* Solicitudes de Campo (Bandeja Entrante) */}
+              {/* Solicitudes de Campo (Bandeja Principal de Pedidos) */}
               <button
                 type="button"
                 onClick={() => setActiveTab('incoming')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'incoming'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
@@ -95,30 +91,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 )}
               </button>
 
-              {/* Pedidos y Despacho */}
-              <button
-                type="button"
-                onClick={() => setActiveTab('order')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
-                  activeTab === 'order'
-                    ? 'bg-neutral-900 text-white shadow-sm'
-                    : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Despacho</span>
-                {pendingOrderCount > 0 && (
-                  <span className={`px-1.5 py-0.2 text-[10px] font-mono font-bold rounded ${activeTab === 'order' ? 'bg-white text-neutral-900' : 'bg-neutral-900 text-white'}`}>
-                    {pendingOrderCount}
-                  </span>
-                )}
-              </button>
-
               {/* Inventario */}
               <button
                 type="button"
                 onClick={() => setActiveTab('catalog')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'catalog'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
@@ -135,7 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('aliases')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'aliases'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
@@ -152,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab('upload')}
-                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                   activeTab === 'upload'
                     ? 'bg-neutral-900 text-white shadow-sm'
                     : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'

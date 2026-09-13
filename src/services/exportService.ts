@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { ParsedLineResult } from '../types';
+import { TechnicianOrder } from './technicianOrderService';
 
 /**
  * Format results as a clean WhatsApp / Email message
@@ -84,79 +85,83 @@ export const exportToExcel = (results: ParsedLineResult[], filename = 'Pedido_No
 
   const ws = XLSX.utils.json_to_sheet(excelRows);
 
-  // Set column widths
   ws['!cols'] = [
-    { wch: 5 },  // #
-    { wch: 30 }, // Texto Original
-    { wch: 22 }, // Término Detectado
-    { wch: 15 }, // Cant. Solicitada
-    { wch: 14 }, // Cód. Artículo
-    { wch: 40 }, // Descripción Oficial
-    { wch: 20 }, // Familia
-    { wch: 18 }, // Unidad
-    { wch: 16 }, // Stock
-    { wch: 18 }, // Estado Stock
-    { wch: 18 }, // Ubicación
-    { wch: 15 }, // Confianza
-    { wch: 14 }, // Similitud
-    { wch: 20 }  // Método
+    { wch: 5 },
+    { wch: 30 },
+    { wch: 22 },
+    { wch: 15 },
+    { wch: 14 },
+    { wch: 40 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 16 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 15 },
+    { wch: 14 },
+    { wch: 18 }
   ];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Pedido Normalizado');
-
   XLSX.writeFile(wb, filename);
 };
 
 /**
- * Export results to CSV file
+ * Export results to CSV file with UTF-8 BOM
  */
-export const exportToCSV = (results: ParsedLineResult[], filename = 'pedido_normalizado.csv') => {
+export const exportToCSV = (results: ParsedLineResult[], filename = 'Pedido_Normalizado_Stock.csv') => {
   const selected = results.filter(r => r.selected);
   if (selected.length === 0) return;
 
   const headers = [
-    'Item',
+    '#',
     'Texto Original',
-    'Termino Detectado',
-    'Cantidad Solicitada',
-    'Cod. Arti',
-    'Descripcion Oficial',
+    'Término Detectado',
+    'Cant. Solicitada',
+    'Cód. Artículo',
+    'Descripción Oficial',
     'Familia',
-    'Unidad',
+    'Unidad Medida',
     'Stock Disponible',
     'Estado Stock',
-    'Ubicacion',
-    'Confianza',
-    'Similitud'
+    'Ubicación Almacén',
+    'Nivel Confianza',
+    'Similitud (%)',
+    'Método Coincidencia'
   ];
 
-  const csvRows = [
-    headers.join(';'),
-    ...selected.map((r, idx) => {
-      const item = r.matchedItem;
-      const stock = item ? item.stock : 0;
-      const stockStatus = !item ? 'NO IDENTIFICADO' : stock >= r.requestedQty ? 'SUFICIENTE' : 'INSUFICIENTE';
+  const rows = selected.map((r, idx) => {
+    const item = r.matchedItem;
+    const stock = item ? item.stock : 0;
+    const stockStatus = !item
+      ? 'NO IDENTIFICADO'
+      : stock >= r.requestedQty
+      ? 'STOCK SUFICIENTE'
+      : stock > 0
+      ? 'STOCK PARCIAL'
+      : 'SIN STOCK';
 
-      return [
-        idx + 1,
-        `"${(r.rawLine || '').replace(/"/g, '""')}"`,
-        `"${(r.detectedTerm || '').replace(/"/g, '""')}"`,
-        r.requestedQty,
-        `"${item?.cod_arti || ''}"`,
-        `"${(item?.descripcion || '').replace(/"/g, '""')}"`,
-        `"${(item?.familia || '').replace(/"/g, '""')}"`,
-        `"${(item?.unidad || '').replace(/"/g, '""')}"`,
-        stock,
-        `"${stockStatus}"`,
-        `"${item?.ubicacion || ''}"`,
-        `"${r.confidenceLevel}"`,
-        `"${r.matchScore}%"`
-      ].join(';');
-    })
-  ];
+    return [
+      idx + 1,
+      `"${r.rawLine.replace(/"/g, '""')}"`,
+      `"${r.detectedTerm.replace(/"/g, '""')}"`,
+      r.requestedQty,
+      `"${item ? item.cod_arti : 'N/A'}"`,
+      `"${(item ? item.descripcion : 'NO ENCONTRADO').replace(/"/g, '""')}"`,
+      `"${(item?.familia || '').replace(/"/g, '""')}"`,
+      `"${(item?.unidad || '').replace(/"/g, '""')}"`,
+      stock,
+      `"${stockStatus}"`,
+      `"${(item?.ubicacion || '').replace(/"/g, '""')}"`,
+      `"${r.confidenceLevel.toUpperCase()}"`,
+      `"${r.matchScore}%"`,
+      `"${r.matchType}"`
+    ].join(',');
+  });
 
-  const blob = new Blob(['\ufeff' + csvRows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
@@ -164,4 +169,119 @@ export const exportToCSV = (results: ParsedLineResult[], filename = 'pedido_norm
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+/**
+ * Export a single Technician Order to Excel (.xlsx)
+ */
+export const exportTechnicianOrderToExcel = (order: TechnicianOrder) => {
+  const rows = order.items.map((item, idx) => ({
+    '#': idx + 1,
+    'N° Pedido': order.orderNumber,
+    'Técnico': order.technicianName,
+    'Fecha': new Date(order.createdAt).toLocaleString('es-PE'),
+    'Cód. Artículo': item.cod_arti,
+    'Descripción': item.descripcion,
+    'Cant. Solicitada': item.quantity,
+    'Unidad': item.unidad,
+    'Ubicación Almacén': item.ubicacion || 'S/U',
+    'Estado': order.status.toUpperCase(),
+    'Nota / Observación': order.note || ''
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 5 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 14 },
+    { wch: 40 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 14 },
+    { wch: 25 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Solicitud');
+  const cleanTech = order.technicianName.replace(/[^a-zA-Z0-9]/g, '_');
+  XLSX.writeFile(wb, `${order.orderNumber}_${cleanTech}.xlsx`);
+};
+
+/**
+ * Export a single Technician Order to CSV
+ */
+export const exportTechnicianOrderToCSV = (order: TechnicianOrder) => {
+  const headers = ['#', 'N° Pedido', 'Técnico', 'Fecha', 'Cód. Artículo', 'Descripción', 'Cant. Solicitada', 'Unidad', 'Ubicación', 'Estado', 'Nota'];
+  const rows = order.items.map((item, idx) => [
+    idx + 1,
+    `"${order.orderNumber}"`,
+    `"${order.technicianName}"`,
+    `"${new Date(order.createdAt).toLocaleString('es-PE')}"`,
+    `"${item.cod_arti}"`,
+    `"${item.descripcion.replace(/"/g, '""')}"`,
+    item.quantity,
+    `"${item.unidad}"`,
+    `"${item.ubicacion || ''}"`,
+    `"${order.status.toUpperCase()}"`,
+    `"${(order.note || '').replace(/"/g, '""')}"`
+  ]);
+
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  const cleanTech = order.technicianName.replace(/[^a-zA-Z0-9]/g, '_');
+  link.setAttribute('download', `${order.orderNumber}_${cleanTech}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+/**
+ * Export All Technician Orders to Excel (.xlsx)
+ */
+export const exportAllOrdersToExcel = (orders: TechnicianOrder[]) => {
+  if (orders.length === 0) return;
+
+  const rows: any[] = [];
+  orders.forEach((order) => {
+    order.items.forEach((item, idx) => {
+      rows.push({
+        'N° Pedido': order.orderNumber,
+        'Técnico': order.technicianName,
+        'Fecha': new Date(order.createdAt).toLocaleString('es-PE'),
+        'Estado': order.status === 'pending' ? 'PENDIENTE' : 'ATENDIDO',
+        '# Ítem': idx + 1,
+        'Cód. Artículo': item.cod_arti,
+        'Descripción': item.descripcion,
+        'Cant. Solicitada': item.quantity,
+        'Unidad': item.unidad,
+        'Ubicación Almacén': item.ubicacion || 'S/U',
+        'Nota': order.note || ''
+      });
+    });
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 14 },
+    { wch: 8 },
+    { wch: 14 },
+    { wch: 40 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 25 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Todas las Solicitudes');
+  XLSX.writeFile(wb, `Solicitudes_Almacen_${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
