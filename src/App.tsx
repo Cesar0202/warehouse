@@ -11,6 +11,7 @@ import { ProductEditModal } from './components/ProductEditModal';
 import { ProductDetailDrawer } from './components/ProductDetailDrawer';
 import { AddItemModal } from './components/AddItemModal';
 import { LoginScreen } from './components/LoginScreen';
+import { TechnicianOrderView } from './components/TechnicianOrderView';
 import { ToastContainer, ToastMessage } from './components/Toast';
 
 import { CatalogItem, AliasItem, ParsedLineResult, AISuggestion } from './types';
@@ -20,6 +21,12 @@ import { processOrderText } from './services/orderParser';
 import { hasGeminiApiKey, decipherTermWithAI } from './services/aiAgentService';
 
 export function App() {
+  const [appMode, setAppMode] = useState<'technician' | 'warehouse'>(() => {
+    const saved = localStorage.getItem('app_mode');
+    if (saved === 'warehouse') return 'warehouse';
+    return 'technician';
+  });
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('warehouse_auth_session') === 'true';
   });
@@ -388,8 +395,33 @@ export function App() {
     setIsAuthenticated(false);
   };
 
+  const handleSetAppMode = (mode: 'technician' | 'warehouse') => {
+    localStorage.setItem('app_mode', mode);
+    setAppMode(mode);
+  };
+
+  if (appMode === 'technician') {
+    return (
+      <>
+        <TechnicianOrderView
+          onShowToast={showToast}
+          onSwitchToWarehouse={() => handleSetAppMode('warehouse')}
+        />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
+  }
+
   if (!isAuthenticated) {
-    return <LoginScreen onLoginSuccess={() => setIsAuthenticated(true)} />;
+    return (
+      <>
+        <LoginScreen
+          onLoginSuccess={() => setIsAuthenticated(true)}
+          onSwitchToTechnician={() => handleSetAppMode('technician')}
+        />
+        <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      </>
+    );
   }
 
   return (
@@ -407,6 +439,7 @@ export function App() {
           pendingOrderCount={orderResults.length}
           hasAIKey={hasAIKey}
           onLogout={handleLogout}
+          onSwitchToTechnician={() => handleSetAppMode('technician')}
         />
       </div>
 

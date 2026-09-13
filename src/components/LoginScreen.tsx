@@ -1,11 +1,12 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Lock, User, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
+  onSwitchToTechnician?: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onSwitchToTechnician }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -90,12 +91,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 mt-2"
+            className="w-full py-2.5 bg-neutral-900 hover:bg-black active:scale-98 text-white text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 mt-2 cursor-pointer"
           >
             <span>Iniciar Sesión</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
+
+        {onSwitchToTechnician && (
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={onSwitchToTechnician}
+              className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-medium rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>👷 Ir al Modo Técnico (Pedir Materiales)</span>
+            </button>
+          </div>
+        )}
 
         {/* Footer info */}
         <div className="pt-2 border-t border-neutral-100 text-center">

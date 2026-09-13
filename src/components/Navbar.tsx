@@ -16,6 +16,7 @@ interface NavbarProps {
   pendingOrderCount: number;
   hasAIKey: boolean;
   onLogout?: () => void;
+  onSwitchToTechnician?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -24,8 +25,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   catalogCount,
   aliasCount,
   pendingOrderCount,
-  hasAIKey,
-  onLogout
+  onLogout,
+  onSwitchToTechnician
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-sm font-sans">
@@ -36,16 +37,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-bold text-base sm:text-lg tracking-tight text-neutral-900 font-mono">
               DEMO - ALMACÉN
             </span>
-            {onLogout && (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="sm:hidden text-xs text-neutral-500 hover:text-black border border-neutral-300 rounded px-2 py-0.5"
-                title="Cerrar sesión"
-              >
-                Salir
-              </button>
-            )}
+            <div className="flex items-center gap-2 sm:hidden">
+              {onSwitchToTechnician && (
+                <button
+                  type="button"
+                  onClick={onSwitchToTechnician}
+                  className="text-xs font-semibold bg-neutral-900 text-white rounded px-2.5 py-1 flex items-center gap-1 shadow-sm"
+                >
+                  <span>👷 Modo Técnico</span>
+                </button>
+              )}
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="text-xs text-neutral-500 hover:text-black border border-neutral-300 rounded px-2 py-0.5"
+                  title="Cerrar sesión"
+                >
+                  Salir
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Navigation Pill Bar */}
@@ -114,6 +126,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>Cargar Excel</span>
               </button>
             </nav>
+
+            {onSwitchToTechnician && (
+              <button
+                type="button"
+                onClick={onSwitchToTechnician}
+                className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold bg-neutral-900 text-white hover:bg-black rounded-lg transition-all shadow-sm items-center gap-1.5"
+                title="Cambiar a vista de pedidos para técnicos"
+              >
+                <span>👷</span>
+                <span>Modo Técnico</span>
+              </button>
+            )}
 
             {onLogout && (
               <button
