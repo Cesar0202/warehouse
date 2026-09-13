@@ -3,7 +3,8 @@ import {
   FileText, 
   BookOpen, 
   UploadCloud, 
-  Layers
+  Layers,
+  Wrench
 } from 'lucide-react';
 
 export type ActiveTab = 'order' | 'catalog' | 'aliases' | 'upload';
@@ -131,10 +132,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onSwitchToTechnician}
-                className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold bg-neutral-900 text-white hover:bg-black rounded-lg transition-all shadow-sm items-center gap-1.5"
+                className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold bg-neutral-900 text-white hover:bg-black rounded-lg transition-all shadow-sm items-center gap-1.5 cursor-pointer"
                 title="Cambiar a vista de pedidos para técnicos"
               >
-                <span>👷</span>
+                <Wrench className="w-3.5 h-3.5" />
                 <span>Modo Técnico</span>
               </button>
             )}

@@ -404,6 +404,8 @@ export function App() {
     return (
       <>
         <TechnicianOrderView
+          catalog={catalog}
+          isLoadingCatalog={isLoadingData}
           onShowToast={showToast}
           onSwitchToWarehouse={() => handleSetAppMode('warehouse')}
         />

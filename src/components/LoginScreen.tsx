@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, User, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, User, KeyRound, ArrowRight, ShieldCheck, Wrench } from 'lucide-react';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -103,9 +103,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onSwit
             <button
               type="button"
               onClick={onSwitchToTechnician}
-              className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-medium rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-2.5 bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 text-neutral-800 text-xs font-medium rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>👷 Ir al Modo Técnico (Pedir Materiales)</span>
+              <Wrench className="w-4 h-4 text-neutral-600" />
+              <span>Ir a Solicitud de Materiales (Técnicos)</span>
             </button>
           </div>
         )}
