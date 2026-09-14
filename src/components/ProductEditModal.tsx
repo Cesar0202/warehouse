@@ -19,6 +19,7 @@ import {
 import { CatalogItem } from '../types';
 import { updateProductDetails } from '../services/catalogService';
 import { getProductImageUrl } from '../services/imageHelper';
+import { uploadImageToCloud } from '../services/imageUploadService';
 
 interface ProductEditModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [ubicacion, setUbicacion] = useState('');
   const [foto, setFoto] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -55,6 +57,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       setUbicacion(product.ubicacion || '');
       setFoto(product.foto || product.imagen || product.image_url || '');
       setShowUrlInput(false);
+      setIsUploading(false);
     }
   }, [product, isOpen]);
 
@@ -64,46 +67,30 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
     setStock(prev => Math.max(0, parseFloat((prev + delta).toFixed(2))));
   };
 
-  const processImageFile = (file: File) => {
+  const processImageFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       onShowToast('error', 'Archivo inválido', 'Por favor selecciona una imagen JPG, PNG o WebP.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_SIZE = 300;
-        let width = img.width;
-        let height = img.height;
+    setIsUploading(true);
+    onShowToast('info', 'Subiendo foto', 'Guardando foto en la nube en alta calidad...');
 
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round((height * MAX_SIZE) / width);
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round((width * MAX_SIZE) / height);
-            height = MAX_SIZE;
-          }
-        }
+    try {
+      const cloudUrl = await uploadImageToCloud(file, (msg) => {
+        console.log(msg);
+      });
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.75);
-          setFoto(compressed);
-          onShowToast('success', 'Foto optimizada', 'Imagen lista para guardar');
-        }
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
+      if (cloudUrl) {
+        setFoto(cloudUrl);
+        onShowToast('success', 'Foto lista', 'Foto subida a la nube correctamente');
+      }
+    } catch (err) {
+      console.error('Error uploading image to cloud:', err);
+      onShowToast('warning', 'Aviso', 'Se guardará en formato optimizado');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -273,8 +260,13 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                 <img
                   src={currentPreview}
                   alt="Vista previa"
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full object-cover ${isUploading ? 'opacity-40 animate-pulse' : ''}`}
                 />
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <span className="text-[10px] text-white font-bold animate-pulse">Subiendo...</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 space-y-2">

@@ -7,9 +7,14 @@ import {
   Key,
   ShieldCheck,
   Save,
-  MessageSquare
+  MessageSquare,
+  CloudUpload,
+  Download
 } from 'lucide-react';
 import { getGeminiApiKey, setGeminiApiKey } from '../services/aiAgentService';
+import { uploadImageToCloud } from '../services/imageUploadService';
+import { forceSyncAllCatalogToPhones } from '../services/technicianOrderService';
+import { getCatalogData } from '../services/catalogService';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -128,6 +133,82 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               placeholder="••••••••••••••••••••••••"
               className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-300 rounded-xl text-neutral-900 text-xs font-mono focus:bg-white focus:border-neutral-900 outline-none transition-all"
             />
+          </div>
+
+          {/* Cloud Photos Migration & Sync */}
+          <div className="space-y-2 pt-3 border-t border-neutral-100">
+            <label className="block text-xs font-bold text-neutral-800 uppercase tracking-wider flex items-center gap-1.5">
+              <CloudUpload className="w-4 h-4 text-blue-600" />
+              <span>Fotos en la Nube y Catálogo</span>
+            </label>
+            <p className="text-xs text-neutral-500">
+              Sube las fotos guardadas en tu laptop directamente a internet para que se vean en todos los teléfonos al instante.
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={async () => {
+                  const raw = localStorage.getItem('app_item_overrides_v1');
+                  if (!raw) {
+                    onShowToast('info', 'Sin fotos locales', 'No hay fotos pendientes por subir');
+                    return;
+                  }
+                  try {
+                    const overrides = JSON.parse(raw);
+                    const keys = Object.keys(overrides);
+                    let uploadedCount = 0;
+                    onShowToast('info', 'Subiendo fotos a la nube...', 'Por favor espera unos segundos');
+
+                    for (const k of keys) {
+                      const item = overrides[k];
+                      if (item && item.foto && item.foto.startsWith('data:image/')) {
+                        const cloudUrl = await uploadImageToCloud(item.foto);
+                        if (cloudUrl && !cloudUrl.startsWith('data:image/')) {
+                          item.foto = cloudUrl;
+                          uploadedCount++;
+                        }
+                      }
+                    }
+
+                    localStorage.setItem('app_item_overrides_v1', JSON.stringify(overrides));
+                    forceSyncAllCatalogToPhones();
+                    onShowToast('success', '¡Fotos en la Nube!', `Se subieron ${uploadedCount} fotos a internet con éxito.`);
+                  } catch (e) {
+                    console.error('Error migrando fotos:', e);
+                    onShowToast('error', 'Error al subir fotos', 'Verifica tu conexión a internet');
+                  }
+                }}
+                className="px-3 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all"
+              >
+                <CloudUpload className="w-4 h-4" />
+                <span>☁️ Subir Fotos a la Nube</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    const catalogData = getCatalogData();
+                    const blob = new Blob([JSON.stringify(catalogData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'catalogo.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    onShowToast('success', 'Catálogo exportado', 'Archivo catalogo.json descargado con éxito.');
+                  } catch (e) {
+                    console.error('Error exportando catálogo:', e);
+                    onShowToast('error', 'Error al exportar');
+                  }
+                }}
+                className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 text-neutral-800 text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                <span>💾 Descargar catalogo.json</span>
+              </button>
+            </div>
           </div>
 
           {/* Footer Buttons */}
