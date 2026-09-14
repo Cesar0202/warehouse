@@ -1,17 +1,4 @@
-
-self.addEventListener('install', (e) => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
-  );
-  self.registration.unregister();
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (e) => {
-  // Always fetch directly from network without caching
-  e.respondWith(fetch(e.request));
-});
+// Minimal pass-through Service Worker for PWA installability
+self.addEventListener('install', (event) => { self.skipWaiting(); });
+self.addEventListener('activate', (event) => { event.waitUntil(self.clients.claim()); });
+self.addEventListener('fetch', (event) => { event.respondWith(fetch(event.request)); });

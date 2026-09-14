@@ -14,7 +14,10 @@ import {
   RotateCcw,
   CheckCircle2,
   Package,
-  FileCheck
+  FileCheck,
+  Smartphone,
+  Download,
+  Share2
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, getCatalogData, initCatalog } from '../services/catalogService';
@@ -47,6 +50,40 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   const [isEditingNameHeader, setIsEditingNameHeader] = useState(!localStorage.getItem(TECH_NAME_STORAGE));
   const [isEditingNameModal, setIsEditingNameModal] = useState(false);
   const [tempModalName, setTempModalName] = useState(techName);
+
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const isApp = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    setIsStandalone(!!isApp);
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setDeferredPrompt(null);
+          onShowToast('success', '¡App instalada con éxito!');
+        }
+      } catch {
+        setShowInstallModal(true);
+      }
+    } else {
+      setShowInstallModal(true);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('TODOS');
@@ -313,50 +350,64 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               </div>
             </div>
 
-            {/* Prominent Technician Name Box */}
-            <div className="bg-neutral-800/95 border border-neutral-700 rounded-xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-2.5 shadow-sm">
-              <div className="flex items-center gap-2 text-xs sm:text-sm">
-                <User className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-neutral-400 font-medium">Técnico:</span>
-              </div>
-              {isEditingNameHeader ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSaveName(techName);
-                  }}
-                  className="flex items-center gap-1.5 flex-1 max-w-xs"
-                >
-                  <input
-                    type="text"
-                    value={techName}
-                    onChange={(e) => setTechName(e.target.value)}
-                    placeholder="Escribe tu nombre..."
-                    autoFocus
-                    className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-600 rounded-lg text-xs sm:text-sm font-semibold text-white outline-none focus:border-white"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs font-bold cursor-pointer shrink-0"
-                    title="Guardar nombre"
-                  >
-                    Guardar
-                  </button>
-                </form>
-              ) : (
+            {/* Prominent Technician Name Box & Install App Button */}
+            <div className="flex flex-wrap items-center gap-2">
+              {!isStandalone && (
                 <button
                   type="button"
-                  onClick={() => setIsEditingNameHeader(true)}
-                  className="flex items-center gap-2 font-bold text-sm text-white hover:text-neutral-200 cursor-pointer"
+                  onClick={handleInstallClick}
+                  className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  title="Instalar como App en el teléfono"
                 >
-                  <span className="text-sm sm:text-base font-extrabold text-white">
-                    {techName || 'Toca aquí para poner tu nombre'}
-                  </span>
-                  <span className="text-xs text-emerald-400 font-medium underline underline-offset-2">
-                    (Cambiar)
-                  </span>
+                  <Smartphone className="w-4 h-4" />
+                  <span>Instalar App</span>
                 </button>
               )}
+
+              <div className="bg-neutral-800/95 border border-neutral-700 rounded-xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-2.5 shadow-sm">
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <User className="w-4 h-4 text-blue-400 shrink-0" />
+                  <span className="text-neutral-400 font-medium">Técnico:</span>
+                </div>
+                {isEditingNameHeader ? (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSaveName(techName);
+                    }}
+                    className="flex items-center gap-1.5 flex-1 max-w-xs"
+                  >
+                    <input
+                      type="text"
+                      value={techName}
+                      onChange={(e) => setTechName(e.target.value)}
+                      placeholder="Escribe tu nombre..."
+                      autoFocus
+                      className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-600 rounded-lg text-xs sm:text-sm font-semibold text-white outline-none focus:border-white"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-1.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                      title="Guardar nombre"
+                    >
+                      Guardar
+                    </button>
+                  </form>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingNameHeader(true)}
+                    className="flex items-center gap-2 font-bold text-sm text-white hover:text-neutral-200 cursor-pointer"
+                  >
+                    <span className="text-sm sm:text-base font-extrabold text-white">
+                      {techName || 'Toca aquí para poner tu nombre'}
+                    </span>
+                    <span className="text-xs text-blue-400 font-medium underline underline-offset-2">
+                      (Cambiar)
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -776,7 +827,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                     type="button"
                     disabled={isSubmitting || cart.length === 0}
                     onClick={handleSendOrderToWarehouse}
-                    className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 active:scale-98 disabled:opacity-50 text-black font-extrabold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                    className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-98 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                   >
                     <Package className="w-4 h-4 stroke-[2.5]" />
                     <span>Enviar Pedido al Almacén</span>
@@ -786,7 +837,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                     <button
                       type="button"
                       onClick={handleClearCart}
-                      className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 py-1 cursor-pointer"
+                      className="text-xs text-neutral-400 hover:text-red-400 flex items-center gap-1.5 py-1 cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Vaciar Carrito</span>
@@ -795,6 +846,63 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Install App Guide Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl text-neutral-100">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-blue-400" />
+                <h3 className="font-bold text-base text-white">Instalar App en el Celular</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInstallModal(false)}
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-300">
+              Para tener acceso directo en tu pantalla de inicio como una aplicación nativa:
+            </p>
+
+            {/* Android Instructions */}
+            <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1.5">
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block">
+                📱 En Android (Google Chrome / Brave / Edge)
+              </span>
+              <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
+                <li>Toca el menú de <strong>3 puntos (⋮)</strong> arriba a la derecha.</li>
+                <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla principal"</strong>.</li>
+                <li>Confirma en <strong>Instalar</strong>.</li>
+              </ol>
+            </div>
+
+            {/* iPhone Instructions */}
+            <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1.5">
+              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block">
+                🍏 En iPhone / iPad (Safari)
+              </span>
+              <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
+                <li>Toca el botón <strong>Compartir</strong> (ícono de cuadro con flecha hacia arriba <strong>[↑]</strong>).</li>
+                <li>Desliza hacia abajo y toca <strong>"Agregar a pantalla de inicio"</strong> (+).</li>
+                <li>Toca <strong>"Agregar"</strong> arriba a la derecha.</li>
+              </ol>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowInstallModal(false)}
+              className="w-full py-2.5 bg-white text-black font-bold text-xs rounded-xl hover:bg-neutral-200 transition-colors cursor-pointer"
+            >
+              Entendido
+            </button>
           </div>
         </div>
       )}
