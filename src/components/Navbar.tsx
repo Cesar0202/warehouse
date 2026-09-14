@@ -5,7 +5,8 @@ import {
   Layers,
   Wrench,
   Settings,
-  Package
+  Package,
+  RotateCcw
 } from 'lucide-react';
 
 export type ActiveTab = 'incoming' | 'catalog' | 'aliases' | 'upload';
@@ -162,6 +163,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Settings className="w-4 h-4" />
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.clear();
+                sessionStorage.clear();
+                if ('caches' in window) {
+                  caches.keys().then((keys) => {
+                    Promise.all(keys.map((k) => caches.delete(k))).then(() => {
+                      (window as any).location.reload();
+                    });
+                  });
+                } else {
+                  (window as any).location.reload();
+                }
+              }}
+              className="hidden sm:inline-flex px-2.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 border border-neutral-200 hover:border-red-200 rounded-lg transition-all cursor-pointer items-center gap-1"
+              title="Borrar caché local y recargar"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Limpiar Caché</span>
+            </button>
 
             {onLogout && (
               <button
