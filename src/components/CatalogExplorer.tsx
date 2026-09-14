@@ -442,15 +442,17 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                     {/* Description & Photo */}
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={getProductImageUrl(item)}
-                          alt={item.descripcion}
-                          className="w-9 h-9 rounded-lg object-cover border border-neutral-200 bg-neutral-100 shrink-0"
-                          loading="lazy"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMAGE;
-                          }}
-                        />
+                        {item.foto ? (
+                          <img
+                            src={item.foto}
+                            alt={item.descripcion}
+                            className="w-9 h-9 rounded-lg object-cover border border-neutral-200 bg-neutral-100 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-400 shrink-0">
+                            <Package className="w-4 h-4" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <p 
                             onClick={() => onOpenDetailDrawer(item)}

@@ -455,16 +455,16 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   }`}
                 >
                   {/* Product Photo Thumbnail */}
-                  <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-700/80 shrink-0 flex items-center justify-center shadow-inner">
-                    <img
-                      src={imgUrl}
-                      alt={item.descripcion}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = getProductImageUrl({ descripcion: item.descripcion, cod_arti: item.cod_arti });
-                      }}
-                    />
+                  <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 flex items-center justify-center shadow-inner">
+                    {item.foto ? (
+                      <img
+                        src={item.foto}
+                        alt={item.descripcion}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="w-8 h-8 text-neutral-600 stroke-[1.5]" />
+                    )}
                     <span className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-neutral-950/90 text-neutral-300 border border-neutral-800 backdrop-blur-xs">
                       {item.cod_arti}
                     </span>
@@ -703,11 +703,17 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           key={c.item.cod_arti}
                           className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center gap-3"
                         >
-                          <img
-                            src={imgUrl}
-                            alt={c.item.descripcion}
-                            className="w-12 h-12 rounded-lg object-cover bg-neutral-900 border border-neutral-800 shrink-0"
-                          />
+                          {c.item.foto ? (
+                            <img
+                              src={c.item.foto}
+                              alt={c.item.descripcion}
+                              className="w-12 h-12 rounded-lg object-cover bg-neutral-900 border border-neutral-800 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500 shrink-0">
+                              <Package className="w-5 h-5" />
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-white truncate">{c.item.descripcion}</p>
                             <p className="text-[11px] font-mono text-neutral-400">
