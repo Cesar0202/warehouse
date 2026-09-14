@@ -87,7 +87,7 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
     const itemOverride = itemOverrides[code] || {};
     const stockOverride = stockOverrides[code];
     let f = itemOverride.foto || item.foto;
-    if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com') || f.startsWith('/productos/'))) {
+    if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
     }
 
@@ -106,7 +106,7 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
 export const setCatalogData = (items: CatalogItem[]) => {
   const sanitized = items.map(item => {
     let f = item.foto;
-    if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com') || f.startsWith('/productos/'))) {
+    if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
     }
     return { ...item, foto: f, imagen: undefined, image_url: undefined };
