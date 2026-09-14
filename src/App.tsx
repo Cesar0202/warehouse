@@ -18,7 +18,8 @@ import { initAliases, getAliases } from './services/aliasService';
 import {
   TechnicianOrder,
   getTechnicianOrders,
-  TECHNICIAN_ORDERS_EVENT
+  TECHNICIAN_ORDERS_EVENT,
+  CATALOG_SYNC_EVENT
 } from './services/technicianOrderService';
 
 export function App() {
@@ -111,6 +112,18 @@ export function App() {
     return () => {
       window.removeEventListener(TECHNICIAN_ORDERS_EVENT, handleOrdersChange);
       window.removeEventListener('storage', handleOrdersChange);
+    };
+  }, []);
+
+  // Listen for real-time catalog changes (photos, stocks, edits from other devices)
+  useEffect(() => {
+    const handleCatalogSync = () => {
+      initCatalog().then((loaded) => setCatalog(loaded));
+    };
+
+    window.addEventListener(CATALOG_SYNC_EVENT, handleCatalogSync);
+    return () => {
+      window.removeEventListener(CATALOG_SYNC_EVENT, handleCatalogSync);
     };
   }, []);
 

@@ -1,6 +1,7 @@
 import Fuse from 'fuse.js';
 import * as XLSX from 'xlsx';
 import { CatalogItem } from '../types';
+import { broadcastCatalogSync } from './technicianOrderService';
 
 let catalogData: CatalogItem[] = [];
 let catalogMap = new Map<string, CatalogItem>();
@@ -24,6 +25,7 @@ export const saveStockOverride = (codArti: string, stock: number) => {
     const overrides = getStockOverrides();
     overrides[codArti.toUpperCase().trim()] = stock;
     localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(overrides));
+    broadcastCatalogSync(getItemOverrides(), overrides);
   } catch (e) {
     console.error('Error saving stock override', e);
   }
@@ -44,6 +46,7 @@ export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>) 
     const key = codArti.toUpperCase().trim();
     overrides[key] = { ...(overrides[key] || {}), ...fields };
     localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(overrides));
+    broadcastCatalogSync(overrides, getStockOverrides());
   } catch (e) {
     console.error('Error saving item override', e);
   }

@@ -23,7 +23,7 @@ import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, getCatalogData, initCatalog } from '../services/catalogService';
 import { getAliases } from '../services/aliasService';
 import { getProductImageUrl } from '../services/imageHelper';
-import { createTechnicianOrder, TechnicianOrder } from '../services/technicianOrderService';
+import { createTechnicianOrder, TechnicianOrder, CATALOG_SYNC_EVENT } from '../services/technicianOrderService';
 
 interface TechnicianOrderViewProps {
   catalog?: CatalogItem[];
@@ -134,6 +134,21 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       }
     }
   }, [catalog]);
+
+  useEffect(() => {
+    const handleCatalogSync = () => {
+      initCatalog().then((loaded) => {
+        setInternalCatalog(loaded);
+      });
+    };
+
+    window.addEventListener(CATALOG_SYNC_EVENT, handleCatalogSync);
+    window.addEventListener('storage', handleCatalogSync);
+    return () => {
+      window.removeEventListener(CATALOG_SYNC_EVENT, handleCatalogSync);
+      window.removeEventListener('storage', handleCatalogSync);
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(CART_STORAGE, JSON.stringify(cart));

@@ -24,9 +24,12 @@ export interface TechnicianOrder {
 
 const ORDERS_STORAGE_KEY = 'app_technician_incoming_orders_v1';
 export const TECHNICIAN_ORDERS_EVENT = 'technician_orders_updated';
+export const CATALOG_SYNC_EVENT = 'catalog_sync_updated';
 
 // MQTT Topic for real-time bi-directional sync between all phones and warehouse PCs
 const MQTT_TOPIC = 'cesar_warehouse_orders_v1/state';
+const MQTT_CATALOG_TOPIC = 'cesar_warehouse_catalog_v1/state';
+
 const BROKER_URLS = [
   'wss://broker.emqx.io:8084/mqtt',
   'wss://broker.hivemq.com:8884/mqtt'
@@ -77,11 +80,8 @@ export const initRealtimeSync = (): void => {
 
     mqttClient.on('connect', () => {
       console.log('Real-time sync connected to broker:', brokerUrl);
-      mqttClient?.subscribe(MQTT_TOPIC, { qos: 1 }, (err) => {
-        if (!err) {
-          console.log('Subscribed to real-time orders channel:', MQTT_TOPIC);
-        }
-      });
+      mqttClient?.subscribe(MQTT_TOPIC, { qos: 1 });
+      mqttClient?.subscribe(MQTT_CATALOG_TOPIC, { qos: 1 });
     });
 
     mqttClient.on('message', (topic, payload) => {
@@ -103,6 +103,25 @@ export const initRealtimeSync = (): void => {
           }
         } catch (err) {
           console.warn('Error parsing incoming real-time MQTT orders:', err);
+        }
+      } else if (topic === MQTT_CATALOG_TOPIC) {
+        try {
+          const data = JSON.parse(payload.toString());
+          if (data && (data.itemOverrides || data.stockOverrides)) {
+            if (data.itemOverrides) {
+              const current = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
+              const merged = { ...current, ...data.itemOverrides };
+              localStorage.setItem('app_item_overrides_v1', JSON.stringify(merged));
+            }
+            if (data.stockOverrides) {
+              const currentStock = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
+              const mergedStock = { ...currentStock, ...data.stockOverrides };
+              localStorage.setItem('app_stock_overrides_v1', JSON.stringify(mergedStock));
+            }
+            window.dispatchEvent(new CustomEvent(CATALOG_SYNC_EVENT, { detail: data }));
+          }
+        } catch (err) {
+          console.warn('Error parsing catalog sync from MQTT:', err);
         }
       }
     });
@@ -135,6 +154,22 @@ export const broadcastOrders = (orders: TechnicianOrder[]): void => {
     mqttClient?.publish(MQTT_TOPIC, payload, { qos: 1, retain: true });
   } catch (e) {
     console.warn('Error broadcasting orders:', e);
+  }
+};
+
+/**
+ * Broadcast custom product edits, user uploaded photos and stock to all phones
+ */
+export const broadcastCatalogSync = (itemOverrides: any, stockOverrides: any): void => {
+  if (!mqttClient || !mqttClient.connected) {
+    initRealtimeSync();
+  }
+
+  try {
+    const payload = JSON.stringify({ itemOverrides, stockOverrides, timestamp: Date.now() });
+    mqttClient?.publish(MQTT_CATALOG_TOPIC, payload, { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error broadcasting catalog sync:', e);
   }
 };
 
