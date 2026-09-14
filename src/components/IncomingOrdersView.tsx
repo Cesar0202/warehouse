@@ -285,8 +285,8 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               <h2 className="text-base sm:text-lg font-bold text-neutral-900">
                 Bandeja de Solicitudes
               </h2>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
                 En Vivo
               </span>
             </div>
@@ -325,11 +325,11 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               onClick={() => setFilterStatus('pending')}
               className={'px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
                 filterStatus === 'pending'
-                  ? 'bg-amber-600 text-white shadow-sm'
-                  : 'text-amber-700 hover:bg-amber-100/60'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
               )}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+              <span className={'w-1.5 h-1.5 rounded-full ' + (filterStatus === 'pending' ? 'bg-white' : 'bg-blue-600')}></span>
               <span>Pendientes ({pendingCount})</span>
             </button>
             <button
@@ -337,11 +337,11 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               onClick={() => setFilterStatus('attended')}
               className={'px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
                 filterStatus === 'attended'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-emerald-700 hover:bg-emerald-100/60'
+                  ? 'bg-neutral-900 text-white shadow-sm'
+                  : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
               )}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span className={'w-1.5 h-1.5 rounded-full ' + (filterStatus === 'attended' ? 'bg-white' : 'bg-neutral-400')}></span>
               <span>Atendidos ({attendedCount})</span>
             </button>
           </div>
@@ -351,7 +351,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               <button
                 type="button"
                 onClick={handleExportAllExcel}
-                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                 title="Descargar todas las solicitudes en un archivo Excel"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -427,7 +427,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
             return (
               <div
                 key={order.id}
-                className={'transition-colors ' + (isPending ? 'bg-amber-50/20 hover:bg-amber-50/40' : 'bg-white hover:bg-neutral-50/80')}
+                className={'transition-colors ' + (isPending ? 'bg-white hover:bg-blue-50/20' : 'bg-white hover:bg-neutral-50/80')}
               >
                 {/* Main Compact Row */}
                 <div className="p-3 sm:px-4 sm:py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -435,7 +435,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <span
                       className={'px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-wide shrink-0 ' + (
-                        isPending ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                        isPending ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
                       )}
                     >
                       {isPending ? 'Pendiente' : 'Atendido'}
@@ -487,7 +487,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleExpand(order.id)}
-                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-0.5 ml-auto sm:ml-1 cursor-pointer bg-blue-50/60 hover:bg-blue-100/80 px-2 py-0.5 rounded-md transition-colors"
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-0.5 ml-auto sm:ml-1 cursor-pointer bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-md transition-colors"
                     >
                       <span>{isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}</span>
                       {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -511,10 +511,10 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleExportExcel(order)}
-                      className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                      className="px-2 py-1 bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                       title="Exportar a Excel"
                     >
-                      <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                      <FileSpreadsheet className="w-3 h-3 text-blue-600" />
                       <span className="hidden sm:inline">Excel</span>
                     </button>
 
@@ -545,7 +545,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                       onClick={() => handleToggleStatus(order)}
                       className={'px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border ' + (
                         isPending
-                          ? 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-300'
+                          ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
                           : 'bg-white hover:bg-neutral-100 text-neutral-600 border-neutral-300'
                       )}
                       title={isPending ? 'Marcar como Atendido' : 'Reabrir como Pendiente'}
@@ -558,7 +558,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDelete(order.id, order.orderNumber)}
-                      className="p-1 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      className="p-1 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
                       title="Eliminar solicitud"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -570,8 +570,8 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                 {isExpanded && (
                   <div className="px-4 py-3 bg-neutral-50/80 border-t border-neutral-200 space-y-2.5">
                     {order.note && (
-                      <div className="p-2.5 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-900 flex items-start gap-2">
-                        <strong className="shrink-0 font-bold">Nota del Técnico:</strong>
+                      <div className="p-2.5 bg-blue-50/50 border border-blue-200/70 rounded-xl text-xs text-blue-950 flex items-start gap-2">
+                        <strong className="shrink-0 font-bold text-blue-900">Nota del Técnico:</strong>
                         <span>{order.note}</span>
                       </div>
                     )}

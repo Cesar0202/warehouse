@@ -83,8 +83,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span
                     className={`px-1.5 py-0.2 text-[10px] font-mono font-bold rounded ${
                       activeTab === 'incoming'
-                        ? 'bg-amber-400 text-black'
-                        : 'bg-amber-500 text-black animate-pulse'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-600 text-white animate-pulse'
                     }`}
                   >
                     {incomingOrdersCount}
