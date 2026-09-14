@@ -507,28 +507,6 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                       <span>Imprimir</span>
                     </button>
 
-                    {/* Exportar Excel */}
-                    <button
-                      type="button"
-                      onClick={() => handleExportExcel(order)}
-                      className="px-2 py-1 bg-white hover:bg-neutral-100 text-neutral-800 border border-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                      title="Exportar a Excel"
-                    >
-                      <FileSpreadsheet className="w-3 h-3 text-blue-600" />
-                      <span className="hidden sm:inline">Excel</span>
-                    </button>
-
-                    {/* Exportar CSV */}
-                    <button
-                      type="button"
-                      onClick={() => handleExportCSV(order)}
-                      className="px-2 py-1 bg-white hover:bg-neutral-100 text-neutral-700 border border-neutral-300 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                      title="Exportar a CSV"
-                    >
-                      <FileText className="w-3 h-3 text-neutral-500" />
-                      <span className="hidden sm:inline">CSV</span>
-                    </button>
-
                     {/* Copiar texto */}
                     <button
                       type="button"
