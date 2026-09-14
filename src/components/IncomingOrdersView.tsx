@@ -29,7 +29,7 @@ import {
   exportTechnicianOrderToCSV,
   exportAllOrdersToExcel
 } from '../services/exportService';
-import { DEFAULT_PRODUCT_IMAGE } from '../services/imageHelper';
+import { DEFAULT_PRODUCT_IMAGE, getProductImageUrl } from '../services/imageHelper';
 
 const formatUnitShort = (rawUnit?: string): string => {
   if (!rawUnit) return 'UND';
@@ -578,20 +578,23 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                               </td>
                               <td className="py-2 px-3">
                                 <div className="flex items-center gap-2">
-                                  {item.foto ? (
-                                    <img
-                                      src={item.foto}
-                                      alt={item.descripcion}
-                                      className="w-7 h-7 rounded-md object-cover bg-neutral-100 shrink-0 border border-neutral-200"
-                                      onError={(e) => {
-                                        (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMAGE;
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="w-7 h-7 rounded-md bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0 border border-neutral-200">
-                                      <Package className="w-3.5 h-3.5" />
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const imgUrl = getProductImageUrl(item);
+                                    return imgUrl && !imgUrl.startsWith('data:image/svg') ? (
+                                      <img
+                                        src={imgUrl}
+                                        alt={item.descripcion}
+                                        className="w-7 h-7 rounded-md object-cover bg-white shrink-0 border border-neutral-200"
+                                        onError={(e) => {
+                                          (e.target as HTMLElement).style.display = 'none';
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 rounded-md bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0 border border-neutral-200">
+                                        <Package className="w-3.5 h-3.5" />
+                                      </div>
+                                    );
+                                  })()}
                                   <span className="font-semibold text-neutral-900 leading-snug">
                                     {item.descripcion || item.cod_arti}
                                   </span>

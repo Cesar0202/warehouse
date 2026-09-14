@@ -507,11 +507,14 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                 >
                   {/* Product Photo Thumbnail */}
                   <div className="relative w-20 h-20 sm:w-22 sm:h-22 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 shrink-0 flex items-center justify-center shadow-inner">
-                    {item.foto ? (
+                    {imgUrl && !imgUrl.startsWith('data:image/svg') ? (
                       <img
-                        src={item.foto}
+                        src={imgUrl}
                         alt={item.descripcion}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
                       />
                     ) : (
                       <Package className="w-8 h-8 text-neutral-600 stroke-[1.5]" />
@@ -754,11 +757,14 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           key={c.item.cod_arti}
                           className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center gap-3"
                         >
-                          {c.item.foto ? (
+                          {imgUrl && !imgUrl.startsWith('data:image/svg') ? (
                             <img
-                              src={c.item.foto}
+                              src={imgUrl}
                               alt={c.item.descripcion}
-                              className="w-12 h-12 rounded-lg object-cover bg-neutral-900 border border-neutral-800 shrink-0"
+                              className="w-12 h-12 rounded-lg object-cover bg-white border border-neutral-800 shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = 'none';
+                              }}
                             />
                           ) : (
                             <div className="w-12 h-12 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-500 shrink-0">
