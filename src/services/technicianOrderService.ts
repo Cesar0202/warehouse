@@ -23,11 +23,15 @@ export interface TechnicianOrder {
 }
 
 const ORDERS_STORAGE_KEY = 'app_technician_incoming_orders_v1';
+const DELETED_ORDERS_KEY = 'app_wh_deleted_order_ids_v1';
+const CLEAR_TIMESTAMP_KEY = 'app_wh_clear_timestamp_v1';
+
 export const TECHNICIAN_ORDERS_EVENT = 'technician_orders_updated';
 export const CATALOG_SYNC_EVENT = 'catalog_sync_updated';
 
 // MQTT Topics for reliable real-time sync between phones and warehouse
-const MQTT_TOPIC_ORDERS = 'cesar_wh_orders_v2/state';
+const MQTT_TOPIC_ORDERS_STATE = 'cesar_wh_orders_v3/state';
+const MQTT_TOPIC_ORDERS_ACTION = 'cesar_wh_orders_v3/action';
 const MQTT_TOPIC_ITEM_PREFIX = 'cesar_wh_item_v2/'; // + cod_arti
 const MQTT_TOPIC_ITEM_WILDCARD = 'cesar_wh_item_v2/+';
 const MQTT_TOPIC_SYNC_REQ = 'cesar_wh_sync_v2/request';
@@ -40,12 +44,48 @@ const BROKER_URLS = [
 let mqttClient: MqttClient | null = null;
 let currentBrokerIndex = 0;
 
+const getDeletedOrderIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(DELETED_ORDERS_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const addDeletedOrderId = (orderId: string) => {
+  try {
+    const set = getDeletedOrderIds();
+    set.add(orderId);
+    localStorage.setItem(DELETED_ORDERS_KEY, JSON.stringify(Array.from(set)));
+  } catch (e) {
+    console.error('Error saving deleted order id', e);
+  }
+};
+
+const getClearTimestamp = (): number => {
+  try {
+    return parseInt(localStorage.getItem(CLEAR_TIMESTAMP_KEY) || '0', 10);
+  } catch {
+    return 0;
+  }
+};
+
 export const getTechnicianOrders = (): TechnicianOrder[] => {
   try {
     const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed: TechnicianOrder[] = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    const deletedIds = getDeletedOrderIds();
+    const clearTime = getClearTimestamp();
+
+    return parsed.filter((o) => {
+      if (deletedIds.has(o.id)) return false;
+      if (clearTime > 0 && new Date(o.createdAt).getTime() < clearTime) return false;
+      return true;
+    });
   } catch (e) {
     console.error('Error reading technician orders:', e);
     return [];
@@ -54,9 +94,17 @@ export const getTechnicianOrders = (): TechnicianOrder[] => {
 
 export const saveTechnicianOrdersLocally = (orders: TechnicianOrder[], emitEvent = true): void => {
   try {
-    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+    const deletedIds = getDeletedOrderIds();
+    const clearTime = getClearTimestamp();
+    const clean = orders.filter((o) => {
+      if (deletedIds.has(o.id)) return false;
+      if (clearTime > 0 && new Date(o.createdAt).getTime() < clearTime) return false;
+      return true;
+    });
+
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(clean));
     if (emitEvent) {
-      window.dispatchEvent(new CustomEvent(TECHNICIAN_ORDERS_EVENT, { detail: orders }));
+      window.dispatchEvent(new CustomEvent(TECHNICIAN_ORDERS_EVENT, { detail: clean }));
     }
   } catch (e) {
     console.error('Error saving technician orders locally:', e);
@@ -82,15 +130,13 @@ export const initRealtimeSync = (): void => {
 
     mqttClient.on('connect', () => {
       console.log('Real-time sync connected to broker:', brokerUrl);
-      mqttClient?.subscribe(MQTT_TOPIC_ORDERS, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_ORDERS_STATE, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_ORDERS_ACTION, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_ITEM_WILDCARD, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_SYNC_REQ, { qos: 1 });
 
-      // Request latest sync from peers or push our existing data
       try {
         mqttClient?.publish(MQTT_TOPIC_SYNC_REQ, JSON.stringify({ timestamp: Date.now() }), { qos: 1 });
-        
-        // Push local saved items to retain topics
         pushLocalOverridesToRetain();
       } catch (e) {
         console.warn('Error on connect sync:', e);
@@ -98,16 +144,61 @@ export const initRealtimeSync = (): void => {
     });
 
     mqttClient.on('message', (topic, payload) => {
-      // 1. Orders Sync
-      if (topic === MQTT_TOPIC_ORDERS) {
+      // 1. Orders Actions
+      if (topic === MQTT_TOPIC_ORDERS_ACTION) {
+        try {
+          const data = JSON.parse(payload.toString());
+          if (!data || !data.action) return;
+
+          if (data.action === 'CREATE_ORDER' && data.order) {
+            const deletedIds = getDeletedOrderIds();
+            if (deletedIds.has(data.order.id)) return;
+
+            const current = getTechnicianOrders();
+            if (!current.some((o) => o.id === data.order.id)) {
+              const updated = [data.order, ...current];
+              saveTechnicianOrdersLocally(updated, true);
+            }
+          } else if (data.action === 'UPDATE_STATUS' && data.orderId) {
+            const current = getTechnicianOrders();
+            const updated = current.map((o) => (o.id === data.orderId ? { ...o, status: data.status } : o));
+            saveTechnicianOrdersLocally(updated, true);
+          } else if (data.action === 'DELETE_ORDER' && data.orderId) {
+            addDeletedOrderId(data.orderId);
+            const current = getTechnicianOrders();
+            const updated = current.filter((o) => o.id !== data.orderId);
+            saveTechnicianOrdersLocally(updated, true);
+          } else if (data.action === 'CLEAR_ALL') {
+            if (data.timestamp) {
+              localStorage.setItem(CLEAR_TIMESTAMP_KEY, String(data.timestamp));
+            }
+            saveTechnicianOrdersLocally([], true);
+          }
+        } catch (err) {
+          console.warn('Error parsing orders action MQTT:', err);
+        }
+      }
+      // 2. Orders Full State (Retained fallback)
+      else if (topic === MQTT_TOPIC_ORDERS_STATE) {
         try {
           const incoming: TechnicianOrder[] = JSON.parse(payload.toString());
           if (Array.isArray(incoming)) {
+            const deletedIds = getDeletedOrderIds();
+            const clearTime = getClearTimestamp();
             const local = getTechnicianOrders();
             const orderMap = new Map<string, TechnicianOrder>();
 
-            local.forEach((o) => orderMap.set(o.id, o));
-            incoming.forEach((o) => orderMap.set(o.id, o));
+            local.forEach((o) => {
+              if (!deletedIds.has(o.id) && !(clearTime > 0 && new Date(o.createdAt).getTime() < clearTime)) {
+                orderMap.set(o.id, o);
+              }
+            });
+
+            incoming.forEach((o) => {
+              if (!deletedIds.has(o.id) && !(clearTime > 0 && new Date(o.createdAt).getTime() < clearTime)) {
+                orderMap.set(o.id, o);
+              }
+            });
 
             const merged = Array.from(orderMap.values()).sort(
               (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -116,17 +207,16 @@ export const initRealtimeSync = (): void => {
             saveTechnicianOrdersLocally(merged, true);
           }
         } catch (err) {
-          console.warn('Error parsing incoming real-time MQTT orders:', err);
+          console.warn('Error parsing incoming real-time MQTT orders state:', err);
         }
       }
-      // 2. Individual Item / Photo / Stock Sync
+      // 3. Individual Item / Photo / Stock Sync
       else if (topic.startsWith(MQTT_TOPIC_ITEM_PREFIX)) {
         try {
           const data = JSON.parse(payload.toString());
           if (data && data.cod_arti) {
             const code = data.cod_arti.toUpperCase().trim();
             
-            // Save item override
             const currentItemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
             currentItemOverrides[code] = {
               ...(currentItemOverrides[code] || {}),
@@ -134,7 +224,6 @@ export const initRealtimeSync = (): void => {
             };
             localStorage.setItem('app_item_overrides_v1', JSON.stringify(currentItemOverrides));
 
-            // Save stock override if provided
             if (typeof data.stock === 'number') {
               const currentStockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
               currentStockOverrides[code] = data.stock;
@@ -147,7 +236,7 @@ export const initRealtimeSync = (): void => {
           console.warn('Error parsing single item sync from MQTT:', err);
         }
       }
-      // 3. Sync Request: another device asked for catalog data
+      // 4. Sync Request
       else if (topic === MQTT_TOPIC_SYNC_REQ) {
         pushLocalOverridesToRetain();
       }
@@ -199,7 +288,7 @@ export const broadcastOrders = (orders: TechnicianOrder[]): void => {
 
   try {
     const payload = JSON.stringify(orders);
-    mqttClient?.publish(MQTT_TOPIC_ORDERS, payload, { qos: 1, retain: true });
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_STATE, payload, { qos: 1, retain: true });
   } catch (e) {
     console.warn('Error broadcasting orders:', e);
   }
@@ -282,7 +371,17 @@ export const createTechnicianOrder = (
 
   const updatedOrders = [newOrder, ...currentOrders];
   saveTechnicianOrdersLocally(updatedOrders, true);
-  broadcastOrders(updatedOrders);
+
+  // Broadcast specific action AND state
+  try {
+    if (!mqttClient || !mqttClient.connected) {
+      initRealtimeSync();
+    }
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_ACTION, JSON.stringify({ action: 'CREATE_ORDER', order: newOrder }), { qos: 1 });
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_STATE, JSON.stringify(updatedOrders), { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error publishing new order action:', e);
+  }
 
   return newOrder;
 };
@@ -296,17 +395,47 @@ export const updateTechnicianOrderStatus = (
     ord.id === orderId ? { ...ord, status } : ord
   );
   saveTechnicianOrdersLocally(updated, true);
-  broadcastOrders(updated);
+
+  try {
+    if (!mqttClient || !mqttClient.connected) {
+      initRealtimeSync();
+    }
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_ACTION, JSON.stringify({ action: 'UPDATE_STATUS', orderId, status }), { qos: 1 });
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_STATE, JSON.stringify(updated), { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error publishing update status:', e);
+  }
 };
 
 export const deleteTechnicianOrder = (orderId: string): void => {
+  addDeletedOrderId(orderId);
   const currentOrders = getTechnicianOrders();
   const updated = currentOrders.filter((ord) => ord.id !== orderId);
   saveTechnicianOrdersLocally(updated, true);
-  broadcastOrders(updated);
+
+  try {
+    if (!mqttClient || !mqttClient.connected) {
+      initRealtimeSync();
+    }
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_ACTION, JSON.stringify({ action: 'DELETE_ORDER', orderId }), { qos: 1 });
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_STATE, JSON.stringify(updated), { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error publishing delete order:', e);
+  }
 };
 
 export const clearAllTechnicianOrders = (): void => {
+  const now = Date.now();
+  localStorage.setItem(CLEAR_TIMESTAMP_KEY, String(now));
   saveTechnicianOrdersLocally([], true);
-  broadcastOrders([]);
+
+  try {
+    if (!mqttClient || !mqttClient.connected) {
+      initRealtimeSync();
+    }
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_ACTION, JSON.stringify({ action: 'CLEAR_ALL', timestamp: now }), { qos: 1 });
+    mqttClient?.publish(MQTT_TOPIC_ORDERS_STATE, JSON.stringify([]), { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error publishing clear all:', e);
+  }
 };

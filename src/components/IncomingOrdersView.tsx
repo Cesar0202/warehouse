@@ -62,7 +62,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   onSwitchToTechnician
 }) => {
   const [orders, setOrders] = useState<TechnicianOrder[]>(() => getTechnicianOrders());
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'attended'>('all');
+  const [filterStatus, setFilterStatus] = useState<'pending' | 'attended'>('pending');
   const [searchQuery, setSearchQuery] = useState('');
   const [orderToPrint, setOrderToPrint] = useState<TechnicianOrder | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -118,7 +118,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
     setOrders(getTechnicianOrders());
     onShowToast(
       'success',
-      newStatus === 'attended' ? 'Pedido marcado como Atendido' : 'Pedido marcado como Pendiente'
+      newStatus === 'attended' ? 'Pedido movido a Atendidos' : 'Pedido movido a Pendientes'
     );
   };
 
@@ -151,20 +151,18 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
           (it.ubicacion ? ' (Ubic: ' + it.ubicacion + ')' : '')
       ),
       '------------------------------',
-      'TOTAL ARTÍCULOS: ' + order.totalItems + ' (' + order.totalUnits + ' unidades)'
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    navigator.clipboard.writeText(lines);
-    onShowToast('success', 'Detalle copiado al portapapeles');
+      'TOTAL: ' + order.totalItems + ' ítems (' + order.totalUnits + ' unidades)'
+    ];
+    navigator.clipboard.writeText(lines.filter(Boolean).join('\n'));
+    onShowToast('success', 'Copiado al portapapeles', 'Texto de la solicitud listo para enviar');
   };
 
   const handlePrintOrder = (order: TechnicianOrder) => {
     setOrderToPrint(order);
     setTimeout(() => {
       window.print();
-    }, 150);
+      setOrderToPrint(null);
+    }, 200);
   };
 
   const handleExportExcel = (order: TechnicianOrder) => {
@@ -196,7 +194,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
   };
 
   const filteredOrders = orders.filter((o) => {
-    if (filterStatus !== 'all' && o.status !== filterStatus) return false;
+    if (o.status !== filterStatus) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchTech = o.technicianName.toLowerCase().includes(q);
@@ -311,38 +309,27 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
           <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 text-xs">
             <button
               type="button"
-              onClick={() => setFilterStatus('all')}
-              className={'px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ' + (
-                filterStatus === 'all'
-                  ? 'bg-neutral-900 text-white shadow-sm'
-                  : 'text-neutral-600 hover:text-neutral-900'
-              )}
-            >
-              Todos ({orders.length})
-            </button>
-            <button
-              type="button"
               onClick={() => setFilterStatus('pending')}
-              className={'px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
+              className={'px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
                 filterStatus === 'pending'
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
               )}
             >
-              <span className={'w-1.5 h-1.5 rounded-full ' + (filterStatus === 'pending' ? 'bg-white' : 'bg-blue-600')}></span>
-              <span>Pendientes ({pendingCount})</span>
+              <span className={'w-2 h-2 rounded-full ' + (filterStatus === 'pending' ? 'bg-white' : 'bg-blue-600')}></span>
+              <span className="font-bold">Pendientes ({pendingCount})</span>
             </button>
             <button
               type="button"
               onClick={() => setFilterStatus('attended')}
-              className={'px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
+              className={'px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ' + (
                 filterStatus === 'attended'
                   ? 'bg-neutral-900 text-white shadow-sm'
                   : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-200/60'
               )}
             >
-              <span className={'w-1.5 h-1.5 rounded-full ' + (filterStatus === 'attended' ? 'bg-white' : 'bg-neutral-400')}></span>
-              <span>Atendidos ({attendedCount})</span>
+              <span className={'w-2 h-2 rounded-full ' + (filterStatus === 'attended' ? 'bg-white' : 'bg-neutral-400')}></span>
+              <span className="font-bold">Atendidos ({attendedCount})</span>
             </button>
           </div>
 
