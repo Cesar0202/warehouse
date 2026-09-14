@@ -18,6 +18,7 @@ import {
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, updateProductStock, getCatalogData } from '../services/catalogService';
 import { getProductImageUrl, DEFAULT_PRODUCT_IMAGE } from '../services/imageHelper';
+import { forceSyncAllCatalogToPhones } from '../services/technicianOrderService';
 import { CustomExportModal } from './CustomExportModal';
 
 interface CatalogExplorerProps {
@@ -219,6 +220,18 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const count = forceSyncAllCatalogToPhones();
+              onShowToast('success', 'Sincronización enviada', 'Transmitiendo todas las fotos y cambios a los teléfonos.');
+            }}
+            className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+            title="Enviar todas las fotos y cambios a los teléfonos de los técnicos"
+          >
+            <span>📡 Sincronizar Teléfonos</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setExportModalOpen(true)}

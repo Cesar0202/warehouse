@@ -26,9 +26,11 @@ const ORDERS_STORAGE_KEY = 'app_technician_incoming_orders_v1';
 export const TECHNICIAN_ORDERS_EVENT = 'technician_orders_updated';
 export const CATALOG_SYNC_EVENT = 'catalog_sync_updated';
 
-// MQTT Topic for real-time bi-directional sync between all phones and warehouse PCs
-const MQTT_TOPIC = 'cesar_warehouse_orders_v1/state';
-const MQTT_CATALOG_TOPIC = 'cesar_warehouse_catalog_v1/state';
+// MQTT Topics for reliable real-time sync between phones and warehouse
+const MQTT_TOPIC_ORDERS = 'cesar_wh_orders_v2/state';
+const MQTT_TOPIC_ITEM_PREFIX = 'cesar_wh_item_v2/'; // + cod_arti
+const MQTT_TOPIC_ITEM_WILDCARD = 'cesar_wh_item_v2/+';
+const MQTT_TOPIC_SYNC_REQ = 'cesar_wh_sync_v2/request';
 
 const BROKER_URLS = [
   'wss://broker.emqx.io:8084/mqtt',
@@ -62,7 +64,7 @@ export const saveTechnicianOrdersLocally = (orders: TechnicianOrder[], emitEvent
 };
 
 /**
- * Initialize MQTT WebSocket connection for instant <50ms real-time delivery
+ * Initialize MQTT WebSocket connection for instant bi-directional sync
  */
 export const initRealtimeSync = (): void => {
   if (mqttClient && mqttClient.connected) return;
@@ -80,12 +82,24 @@ export const initRealtimeSync = (): void => {
 
     mqttClient.on('connect', () => {
       console.log('Real-time sync connected to broker:', brokerUrl);
-      mqttClient?.subscribe(MQTT_TOPIC, { qos: 1 });
-      mqttClient?.subscribe(MQTT_CATALOG_TOPIC, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_ORDERS, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_ITEM_WILDCARD, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_SYNC_REQ, { qos: 1 });
+
+      // Request latest sync from peers or push our existing data
+      try {
+        mqttClient?.publish(MQTT_TOPIC_SYNC_REQ, JSON.stringify({ timestamp: Date.now() }), { qos: 1 });
+        
+        // Push local saved items to retain topics
+        pushLocalOverridesToRetain();
+      } catch (e) {
+        console.warn('Error on connect sync:', e);
+      }
     });
 
     mqttClient.on('message', (topic, payload) => {
-      if (topic === MQTT_TOPIC) {
+      // 1. Orders Sync
+      if (topic === MQTT_TOPIC_ORDERS) {
         try {
           const incoming: TechnicianOrder[] = JSON.parse(payload.toString());
           if (Array.isArray(incoming)) {
@@ -104,35 +118,69 @@ export const initRealtimeSync = (): void => {
         } catch (err) {
           console.warn('Error parsing incoming real-time MQTT orders:', err);
         }
-      } else if (topic === MQTT_CATALOG_TOPIC) {
+      }
+      // 2. Individual Item / Photo / Stock Sync
+      else if (topic.startsWith(MQTT_TOPIC_ITEM_PREFIX)) {
         try {
           const data = JSON.parse(payload.toString());
-          if (data && (data.itemOverrides || data.stockOverrides)) {
-            if (data.itemOverrides) {
-              const current = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
-              const merged = { ...current, ...data.itemOverrides };
-              localStorage.setItem('app_item_overrides_v1', JSON.stringify(merged));
+          if (data && data.cod_arti) {
+            const code = data.cod_arti.toUpperCase().trim();
+            
+            // Save item override
+            const currentItemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
+            currentItemOverrides[code] = {
+              ...(currentItemOverrides[code] || {}),
+              ...(data.fields || {})
+            };
+            localStorage.setItem('app_item_overrides_v1', JSON.stringify(currentItemOverrides));
+
+            // Save stock override if provided
+            if (typeof data.stock === 'number') {
+              const currentStockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
+              currentStockOverrides[code] = data.stock;
+              localStorage.setItem('app_stock_overrides_v1', JSON.stringify(currentStockOverrides));
             }
-            if (data.stockOverrides) {
-              const currentStock = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
-              const mergedStock = { ...currentStock, ...data.stockOverrides };
-              localStorage.setItem('app_stock_overrides_v1', JSON.stringify(mergedStock));
-            }
+
             window.dispatchEvent(new CustomEvent(CATALOG_SYNC_EVENT, { detail: data }));
           }
         } catch (err) {
-          console.warn('Error parsing catalog sync from MQTT:', err);
+          console.warn('Error parsing single item sync from MQTT:', err);
         }
+      }
+      // 3. Sync Request: another device asked for catalog data
+      else if (topic === MQTT_TOPIC_SYNC_REQ) {
+        pushLocalOverridesToRetain();
       }
     });
 
     mqttClient.on('error', (err) => {
       console.warn('MQTT connection error on ' + brokerUrl + ':', err);
-      // Try next broker
       currentBrokerIndex = (currentBrokerIndex + 1) % BROKER_URLS.length;
     });
   } catch (err) {
     console.warn('Failed to initialize MQTT sync:', err);
+  }
+};
+
+const pushLocalOverridesToRetain = () => {
+  try {
+    const itemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
+    const stockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
+    const allCodes = Array.from(new Set([...Object.keys(itemOverrides), ...Object.keys(stockOverrides)]));
+
+    if (allCodes.length === 0 || !mqttClient || !mqttClient.connected) return;
+
+    allCodes.forEach((code) => {
+      const payload = JSON.stringify({
+        cod_arti: code,
+        fields: itemOverrides[code] || {},
+        stock: stockOverrides[code],
+        timestamp: Date.now()
+      });
+      mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(code), payload, { qos: 1, retain: true });
+    });
+  } catch (e) {
+    console.warn('Error pushing local overrides to retain:', e);
   }
 };
 
@@ -151,26 +199,51 @@ export const broadcastOrders = (orders: TechnicianOrder[]): void => {
 
   try {
     const payload = JSON.stringify(orders);
-    mqttClient?.publish(MQTT_TOPIC, payload, { qos: 1, retain: true });
+    mqttClient?.publish(MQTT_TOPIC_ORDERS, payload, { qos: 1, retain: true });
   } catch (e) {
     console.warn('Error broadcasting orders:', e);
   }
 };
 
 /**
- * Broadcast custom product edits, user uploaded photos and stock to all phones
+ * Broadcast single item update (photo, description, stock) to all phones via retained MQTT
  */
-export const broadcastCatalogSync = (itemOverrides: any, stockOverrides: any): void => {
+export const broadcastCatalogItemSync = (codArti: string, fields: Partial<CatalogItem>, stock?: number): void => {
   if (!mqttClient || !mqttClient.connected) {
     initRealtimeSync();
   }
 
   try {
-    const payload = JSON.stringify({ itemOverrides, stockOverrides, timestamp: Date.now() });
-    mqttClient?.publish(MQTT_CATALOG_TOPIC, payload, { qos: 1, retain: true });
+    const code = codArti.toUpperCase().trim();
+    const payload = JSON.stringify({
+      cod_arti: code,
+      fields,
+      stock,
+      timestamp: Date.now()
+    });
+    mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(code), payload, { qos: 1, retain: true });
   } catch (e) {
-    console.warn('Error broadcasting catalog sync:', e);
+    console.warn('Error broadcasting item sync:', e);
   }
+};
+
+/**
+ * Broadcast custom product edits, user uploaded photos and stock to all phones
+ */
+export const broadcastCatalogSync = (_itemOverrides?: any, _stockOverrides?: any): void => {
+  pushLocalOverridesToRetain();
+};
+
+/**
+ * Force manual sync of all photos and stocks to phones
+ */
+export const forceSyncAllCatalogToPhones = (): number => {
+  if (!mqttClient || !mqttClient.connected) {
+    initRealtimeSync();
+  }
+  pushLocalOverridesToRetain();
+  const itemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
+  return Object.keys(itemOverrides).length;
 };
 
 export const createTechnicianOrder = (

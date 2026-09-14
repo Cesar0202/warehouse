@@ -75,7 +75,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_SIZE = 500;
+        const MAX_SIZE = 300;
         let width = img.width;
         let height = img.height;
 
@@ -96,7 +96,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          const compressed = canvas.toDataURL('image/jpeg', 0.75);
           setFoto(compressed);
           onShowToast('success', 'Foto optimizada', 'Imagen lista para guardar');
         }

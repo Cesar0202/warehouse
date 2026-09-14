@@ -20,6 +20,7 @@ interface NavbarProps {
   onLogout?: () => void;
   onSwitchToTechnician?: () => void;
   onOpenSettings?: () => void;
+  onSyncToPhones?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -30,7 +31,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   incomingOrdersCount,
   onLogout,
   onSwitchToTechnician,
-  onOpenSettings
+  onOpenSettings,
+  onSyncToPhones
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-neutral-200/90 shadow-sm font-sans">
@@ -42,6 +44,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               ALMACÉN CENTRAL
             </span>
             <div className="flex items-center gap-2 sm:hidden">
+              {onSyncToPhones && (
+                <button
+                  type="button"
+                  onClick={onSyncToPhones}
+                  className="text-xs font-semibold bg-blue-600 text-white rounded px-2.5 py-1 flex items-center gap-1 shadow-sm"
+                  title="Enviar fotos y stock a todos los teléfonos"
+                >
+                  <span>📡 Sincronizar</span>
+                </button>
+              )}
               {onSwitchToTechnician && (
                 <button
                   type="button"
@@ -141,6 +153,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             </nav>
 
+            {onSyncToPhones && (
+              <button
+                type="button"
+                onClick={onSyncToPhones}
+                className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm items-center gap-1.5 cursor-pointer"
+                title="Sincronizar todas las fotos y cambios con los teléfonos de los técnicos"
+              >
+                <span>📡 Sincronizar Teléfonos</span>
+              </button>
+            )}
+
             {onSwitchToTechnician && (
               <button
                 type="button"
@@ -163,28 +186,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Settings className="w-4 h-4" />
               </button>
             )}
-
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.clear();
-                sessionStorage.clear();
-                if ('caches' in window) {
-                  caches.keys().then((keys) => {
-                    Promise.all(keys.map((k) => caches.delete(k))).then(() => {
-                      (window as any).location.reload();
-                    });
-                  });
-                } else {
-                  (window as any).location.reload();
-                }
-              }}
-              className="hidden sm:inline-flex px-2.5 py-1.5 text-xs font-semibold text-neutral-600 hover:text-red-600 hover:bg-red-50 border border-neutral-200 hover:border-red-200 rounded-lg transition-all cursor-pointer items-center gap-1"
-              title="Borrar caché local y recargar"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Limpiar Caché</span>
-            </button>
 
             {onLogout && (
               <button

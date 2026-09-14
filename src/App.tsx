@@ -19,7 +19,8 @@ import {
   TechnicianOrder,
   getTechnicianOrders,
   TECHNICIAN_ORDERS_EVENT,
-  CATALOG_SYNC_EVENT
+  CATALOG_SYNC_EVENT,
+  forceSyncAllCatalogToPhones
 } from './services/technicianOrderService';
 
 export function App() {
@@ -170,6 +171,11 @@ export function App() {
     setAppMode(mode);
   };
 
+  const handleSyncToPhones = () => {
+    const count = forceSyncAllCatalogToPhones();
+    showToast('success', 'Sincronización enviada', `Transmitiendo fotos y ajustes en tiempo real a todos los teléfonos.`);
+  };
+
   const pendingIncomingCount = incomingOrders.filter((o) => o.status === 'pending').length;
 
   if (appMode === 'technician') {
@@ -214,6 +220,7 @@ export function App() {
           onLogout={handleLogout}
           onSwitchToTechnician={() => handleSetAppMode('technician')}
           onOpenSettings={() => setSettingsModalOpen(true)}
+          onSyncToPhones={handleSyncToPhones}
         />
       </div>
 

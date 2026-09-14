@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import * as XLSX from 'xlsx';
 import { CatalogItem } from '../types';
-import { broadcastCatalogSync } from './technicianOrderService';
+import { broadcastCatalogSync, broadcastCatalogItemSync } from './technicianOrderService';
 
 let catalogData: CatalogItem[] = [];
 let catalogMap = new Map<string, CatalogItem>();
@@ -22,10 +22,13 @@ export const getStockOverrides = (): Record<string, number> => {
 
 export const saveStockOverride = (codArti: string, stock: number) => {
   try {
+    const normCode = codArti.toUpperCase().trim();
     const overrides = getStockOverrides();
-    overrides[codArti.toUpperCase().trim()] = stock;
+    overrides[normCode] = stock;
     localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(overrides));
-    broadcastCatalogSync(getItemOverrides(), overrides);
+    
+    const itemOverrides = getItemOverrides();
+    broadcastCatalogItemSync(normCode, itemOverrides[normCode] || {}, stock);
   } catch (e) {
     console.error('Error saving stock override', e);
   }
@@ -42,11 +45,13 @@ export const getItemOverrides = (): Record<string, Partial<CatalogItem>> => {
 
 export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>) => {
   try {
+    const normCode = codArti.toUpperCase().trim();
     const overrides = getItemOverrides();
-    const key = codArti.toUpperCase().trim();
-    overrides[key] = { ...(overrides[key] || {}), ...fields };
+    overrides[normCode] = { ...(overrides[normCode] || {}), ...fields };
     localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(overrides));
-    broadcastCatalogSync(overrides, getStockOverrides());
+    
+    const stockOverrides = getStockOverrides();
+    broadcastCatalogItemSync(normCode, overrides[normCode], stockOverrides[normCode]);
   } catch (e) {
     console.error('Error saving item override', e);
   }
