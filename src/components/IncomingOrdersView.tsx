@@ -31,6 +31,27 @@ import {
 } from '../services/exportService';
 import { DEFAULT_PRODUCT_IMAGE } from '../services/imageHelper';
 
+const formatUnitShort = (rawUnit?: string): string => {
+  if (!rawUnit) return 'UND';
+  const u = rawUnit.toUpperCase();
+  if (u.includes('UNIDAD') || u.startsWith('007') || u.includes('UND') || u.includes('PZA') || u.includes('PIEZA')) return 'UND';
+  if (u.includes('GALON') || u.startsWith('009') || u.includes('GLN') || u.includes('GAL')) return 'GLN';
+  if (u.includes('KILOGRAMO') || u.startsWith('001') || u.includes('KG') || u.includes('KILO')) return 'KG';
+  if (u.includes('METRO') || u.startsWith('002') || u.includes('MTR')) return 'M';
+  if (u.includes('CAJA') || u.startsWith('003') || u.includes('CJA')) return 'CJA';
+  if (u.includes('ROLLO') || u.includes('RLL')) return 'RLL';
+  if (u.includes('LITRO') || u.includes('LTR') || u.includes('LT')) return 'LT';
+  if (u.includes('BOLSA') || u.includes('BLS')) return 'BLS';
+  if (u.includes('PAR') || u.includes('PRS')) return 'PAR';
+  if (u.includes('JUEGO') || u.includes('JGO') || u.includes('SET')) return 'SET';
+  if (u.includes('PAQUETE') || u.includes('PQT')) return 'PQT';
+  if (rawUnit.includes('=')) {
+    const after = rawUnit.split('=')[1]?.trim();
+    if (after) return after.slice(0, 6).toUpperCase();
+  }
+  return rawUnit.slice(0, 6).toUpperCase();
+};
+
 interface IncomingOrdersViewProps {
   onShowToast: (type: 'success' | 'warning' | 'error' | 'info', title: string, msg?: string) => void;
   onSwitchToTechnician?: () => void;
@@ -126,7 +147,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
       '------------------------------',
       ...order.items.map(
         (it, idx) =>
-          (idx + 1) + '. [' + it.cod_arti + '] ' + it.descripcion + ' - Cant: ' + it.quantity + ' ' + it.unidad +
+          (idx + 1) + '. [' + it.cod_arti + '] ' + it.descripcion + ' - Cant: ' + it.quantity + ' ' + formatUnitShort(it.unidad) +
           (it.ubicacion ? ' (Ubic: ' + it.ubicacion + ')' : '')
       ),
       '------------------------------',
@@ -222,7 +243,7 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
             <thead>
               <tr className="bg-neutral-100 border-b-2 border-black font-mono font-bold uppercase">
                 <th className="border border-black py-1.5 px-2 text-center w-10">CHECK</th>
-                <th className="border border-black py-1.5 px-2 text-center w-12">CANT.</th>
+                <th className="border border-black py-1.5 px-2 text-center w-16">CANT.</th>
                 <th className="border border-black py-1.5 px-2 text-left w-24">CÓDIGO</th>
                 <th className="border border-black py-1.5 px-2 text-left">DESCRIPCIÓN DE MATERIAL</th>
                 <th className="border border-black py-1.5 px-2 text-center w-24">UBICACIÓN</th>
@@ -234,15 +255,14 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   <td className="border border-black py-1.5 px-1 text-center align-middle">
                     <div className="w-4 h-4 border border-black inline-block align-middle" />
                   </td>
-                  <td className="border border-black py-1.5 px-2 text-center font-mono font-bold text-sm">
-                    {it.quantity}
+                  <td className="border border-black py-1.5 px-2 text-center font-mono font-bold text-xs">
+                    {it.quantity} {formatUnitShort(it.unidad)}
                   </td>
                   <td className="border border-black py-1.5 px-2 font-mono font-bold text-xs">
                     {it.cod_arti}
                   </td>
                   <td className="border border-black py-1.5 px-2">
                     <span className="font-bold text-xs uppercase">{it.descripcion}</span>
-                    <span className="text-[10px] text-neutral-600 font-mono ml-2">({it.unidad})</span>
                   </td>
                   <td className="border border-black py-1.5 px-2 text-center font-mono font-bold text-xs">
                     {it.ubicacion || '-'}
@@ -418,10 +438,10 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
             return (
               <div
                 key={order.id}
-                className={'transition-colors ' + (isPending ? 'bg-amber-50/30 hover:bg-amber-50/50' : 'bg-white hover:bg-neutral-50/80')}
+                className={'transition-colors ' + (isPending ? 'bg-amber-50/20 hover:bg-amber-50/40' : 'bg-white hover:bg-neutral-50/80')}
               >
                 {/* Main Compact Row */}
-                <div className="p-3 sm:px-4 sm:py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                <div className="p-3 sm:px-4 sm:py-3 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   {/* Left Column: Status, Date, Tech Name, Order Number */}
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <span
@@ -449,33 +469,38 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Middle: Items Summary Chips & Count */}
+                  {/* Middle: Items Summary Preview & Item count badge */}
                   <div className="flex-1 flex flex-wrap items-center gap-1.5 px-1 min-w-0">
-                    {order.items.slice(0, 3).map((it, idx) => (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-neutral-100 border border-neutral-200 rounded-md text-[11px] font-semibold text-neutral-700 shrink-0">
+                      <Package className="w-3 h-3 text-neutral-500" />
+                      <span>{order.totalItems} ítems ({order.totalUnits} unids.)</span>
+                    </span>
+
+                    {order.items.slice(0, 2).map((it, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-neutral-200 rounded-md text-[11px] text-neutral-800 truncate max-w-[220px]"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-white border border-neutral-200 rounded-md text-[11px] text-neutral-700 truncate max-w-[200px]"
                         title={it.descripcion}
                       >
-                        <strong className="font-mono text-neutral-900">{it.cod_arti}</strong>
-                        <span className="truncate">{it.descripcion || 'Material'}</span>
+                        <span className="truncate">{it.descripcion || it.cod_arti}</span>
                         <span className="font-mono font-bold text-neutral-900 bg-neutral-100 px-1 rounded text-[10px]">
                           x{it.quantity}
                         </span>
                       </span>
                     ))}
-                    {order.items.length > 3 && (
+
+                    {order.items.length > 2 && (
                       <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
-                        +{order.items.length - 3} más
+                        +{order.items.length - 2}
                       </span>
                     )}
 
                     <button
                       type="button"
                       onClick={() => toggleExpand(order.id)}
-                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-0.5 ml-1 cursor-pointer"
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-0.5 ml-auto sm:ml-1 cursor-pointer bg-blue-50/60 hover:bg-blue-100/80 px-2 py-0.5 rounded-md transition-colors"
                     >
-                      <span>{isExpanded ? 'Ocultar' : 'Ver todo (' + order.totalItems + ')'}</span>
+                      <span>{isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}</span>
                       {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     </button>
                   </div>
@@ -552,49 +577,77 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   </div>
                 </div>
 
-                {/* Expanded Details Row */}
+                {/* Expanded Itemized Detail Table */}
                 {isExpanded && (
-                  <div className="px-4 py-3 bg-neutral-50 border-t border-neutral-200/80 space-y-2">
+                  <div className="px-4 py-3 bg-neutral-50/80 border-t border-neutral-200 space-y-2.5">
                     {order.note && (
-                      <div className="p-2 bg-white rounded-lg border border-neutral-200 text-xs text-neutral-700 flex items-start gap-2">
-                        <strong className="text-neutral-900 shrink-0">Nota:</strong>
-                        <span className="italic">{order.note}</span>
+                      <div className="p-2.5 bg-amber-50/60 border border-amber-200/80 rounded-xl text-xs text-amber-900 flex items-start gap-2">
+                        <strong className="shrink-0 font-bold">Nota del Técnico:</strong>
+                        <span>{order.note}</span>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {order.items.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="p-2 bg-white rounded-xl border border-neutral-200 flex items-center gap-2.5"
-                        >
-                          {item.foto ? (
-                            <img
-                              src={item.foto}
-                              alt={item.descripcion}
-                              className="w-9 h-9 rounded-lg object-cover bg-neutral-100 shrink-0"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMAGE;
-                              }}
-                            />
-                          ) : (
-                            <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 shrink-0">
-                              <Package className="w-4 h-4" />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-neutral-900 truncate">
-                              {item.descripcion || item.cod_arti}
-                            </p>
-                            <p className="text-[10px] text-neutral-500 font-mono">
-                              [{item.cod_arti}] {item.ubicacion ? '📍 ' + item.ubicacion : ''}
-                            </p>
-                          </div>
-                          <div className="text-right shrink-0 bg-neutral-100 px-2 py-0.5 rounded font-mono font-bold text-xs text-neutral-900">
-                            {item.quantity} {item.unidad || 'UND'}
-                          </div>
-                        </div>
-                      ))}
+                    <div className="overflow-x-auto bg-white border border-neutral-200 rounded-xl shadow-xs">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-neutral-100/80 text-neutral-600 font-bold border-b border-neutral-200 text-[11px] uppercase tracking-wider">
+                            <th className="py-2 px-3 w-10 text-center">#</th>
+                            <th className="py-2 px-3 w-28">Código</th>
+                            <th className="py-2 px-3">Descripción de Material</th>
+                            <th className="py-2 px-3 w-28 text-center">Ubicación</th>
+                            <th className="py-2 px-3 w-24 text-right">Cantidad</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100">
+                          {order.items.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-neutral-50/80 transition-colors">
+                              <td className="py-2 px-3 text-center text-neutral-400 font-mono text-[11px]">
+                                {idx + 1}
+                              </td>
+                              <td className="py-2 px-3 font-mono font-bold text-neutral-800 text-[11px]">
+                                <span className="bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200">
+                                  {item.cod_arti}
+                                </span>
+                              </td>
+                              <td className="py-2 px-3">
+                                <div className="flex items-center gap-2">
+                                  {item.foto ? (
+                                    <img
+                                      src={item.foto}
+                                      alt={item.descripcion}
+                                      className="w-7 h-7 rounded-md object-cover bg-neutral-100 shrink-0 border border-neutral-200"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = DEFAULT_PRODUCT_IMAGE;
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="w-7 h-7 rounded-md bg-neutral-100 text-neutral-400 flex items-center justify-center shrink-0 border border-neutral-200">
+                                      <Package className="w-3.5 h-3.5" />
+                                    </div>
+                                  )}
+                                  <span className="font-semibold text-neutral-900 leading-snug">
+                                    {item.descripcion || item.cod_arti}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-2 px-3 text-center font-mono text-[11px] text-neutral-600">
+                                {item.ubicacion ? (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-neutral-100 rounded text-neutral-700 font-medium">
+                                    📍 {item.ubicacion}
+                                  </span>
+                                ) : (
+                                  <span className="text-neutral-300">-</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 text-right font-mono font-bold text-neutral-900 text-xs">
+                                <span className="bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200 inline-block">
+                                  {item.quantity} <span className="text-neutral-600 text-[10px] font-semibold">{formatUnitShort(item.unidad)}</span>
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 )}
