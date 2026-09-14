@@ -271,17 +271,6 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               ))}
             </tbody>
           </table>
-
-          <div className="mt-12 pt-4 grid grid-cols-2 gap-8 text-center text-xs font-mono">
-            <div className="border-t border-black pt-2">
-              <p className="font-bold uppercase">ENTREGADO POR (ALMACÉN)</p>
-              <p className="text-[10px] text-neutral-500">Firma y Sello</p>
-            </div>
-            <div className="border-t border-black pt-2">
-              <p className="font-bold uppercase">RECIBIDO POR ({orderToPrint.technicianName.toUpperCase()})</p>
-              <p className="text-[10px] text-neutral-500">Firma y DNI</p>
-            </div>
-          </div>
         </div>
       )}
 
