@@ -6,10 +6,16 @@ export const DEFAULT_PRODUCT_IMAGE = "data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%
 export const getProductImageUrl = (
   item: CatalogItem | { descripcion: string; cod_arti: string; familia?: string; foto?: string; imagen?: string; image_url?: string }
 ): string => {
-  // Only return a photo if the user has explicitly uploaded or set one for this item
-  if (item.foto && item.foto.trim()) return item.foto.trim();
-  if (item.imagen && item.imagen.trim()) return item.imagen.trim();
-  if (item.image_url && item.image_url.trim()) return item.image_url.trim();
+  // Only return a photo if the user has explicitly uploaded a real photo (JPEG/PNG/WebP data URI or valid custom URL)
+  if (item.foto && item.foto.trim() && !item.foto.startsWith('data:image/svg') && !item.foto.includes('unsplash.com') && !item.foto.startsWith('/productos/')) {
+    return item.foto.trim();
+  }
+  if (item.imagen && item.imagen.trim() && !item.imagen.startsWith('data:image/svg') && !item.imagen.includes('unsplash.com') && !item.imagen.startsWith('/productos/')) {
+    return item.imagen.trim();
+  }
+  if (item.image_url && item.image_url.trim() && !item.image_url.startsWith('data:image/svg') && !item.image_url.includes('unsplash.com') && !item.image_url.startsWith('/productos/')) {
+    return item.image_url.trim();
+  }
 
   // Otherwise, clean neutral placeholder
   return DEFAULT_PRODUCT_IMAGE;

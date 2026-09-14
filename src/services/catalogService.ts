@@ -13,10 +13,18 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
   const localCatalog = localStorage.getItem(CUSTOM_CATALOG_STORAGE_KEY);
   if (localCatalog) {
     try {
-      const parsed = JSON.parse(localCatalog);
+      const parsed: CatalogItem[] = JSON.parse(localCatalog);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        setCatalogData(parsed);
-        return parsed;
+        // Purge any old test SVGs, unsplash, or hardcoded paths from localStorage
+        const sanitized = parsed.map(item => {
+          let f = item.foto;
+          if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com') || f.startsWith('/productos/'))) {
+            f = undefined;
+          }
+          return { ...item, foto: f, imagen: undefined, image_url: undefined };
+        });
+        setCatalogData(sanitized);
+        return sanitized;
       }
     } catch (e) {
       console.warn('Error reading custom catalog from localStorage, fallback to default', e);
@@ -39,9 +47,17 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
 };
 
 export const setCatalogData = (items: CatalogItem[]) => {
-  catalogData = items;
+  const sanitized = items.map(item => {
+    let f = item.foto;
+    if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com') || f.startsWith('/productos/'))) {
+      f = undefined;
+    }
+    return { ...item, foto: f, imagen: undefined, image_url: undefined };
+  });
+
+  catalogData = sanitized;
   catalogMap.clear();
-  for (const item of items) {
+  for (const item of sanitized) {
     catalogMap.set(item.cod_arti.toUpperCase().trim(), item);
   }
 
