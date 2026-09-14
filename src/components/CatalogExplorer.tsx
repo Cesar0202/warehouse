@@ -441,6 +441,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
 
                     {/* Description & Photo */}
                     <td className="py-3 px-3">
+                      <div className="flex items-center gap-3">
                         {(() => {
                           const imgUrl = getProductImageUrl(item);
                           return imgUrl && !imgUrl.startsWith('data:image/svg') ? (
