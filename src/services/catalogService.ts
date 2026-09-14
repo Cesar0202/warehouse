@@ -7,43 +7,100 @@ let catalogMap = new Map<string, CatalogItem>();
 let catalogFuse: Fuse<CatalogItem> | null = null;
 
 const CUSTOM_CATALOG_STORAGE_KEY = 'app_custom_catalog_v2';
+const STOCK_OVERRIDES_KEY = 'app_stock_overrides_v1';
+const CUSTOM_OVERRIDES_KEY = 'app_item_overrides_v1';
+
+export const getStockOverrides = (): Record<string, number> => {
+  try {
+    const raw = localStorage.getItem(STOCK_OVERRIDES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const saveStockOverride = (codArti: string, stock: number) => {
+  try {
+    const overrides = getStockOverrides();
+    overrides[codArti.toUpperCase().trim()] = stock;
+    localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(overrides));
+  } catch (e) {
+    console.error('Error saving stock override', e);
+  }
+};
+
+export const getItemOverrides = (): Record<string, Partial<CatalogItem>> => {
+  try {
+    const raw = localStorage.getItem(CUSTOM_OVERRIDES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>) => {
+  try {
+    const overrides = getItemOverrides();
+    const key = codArti.toUpperCase().trim();
+    overrides[key] = { ...(overrides[key] || {}), ...fields };
+    localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(overrides));
+  } catch (e) {
+    console.error('Error saving item override', e);
+  }
+};
 
 export const initCatalog = async (): Promise<CatalogItem[]> => {
+  const stockOverrides = getStockOverrides();
+  const itemOverrides = getItemOverrides();
+  let baseData: CatalogItem[] = [];
+
   // Check if there is cached/updated catalog in localStorage
   const localCatalog = localStorage.getItem(CUSTOM_CATALOG_STORAGE_KEY);
   if (localCatalog) {
     try {
       const parsed: CatalogItem[] = JSON.parse(localCatalog);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Purge any old test SVGs, unsplash, or hardcoded paths from localStorage
-        const sanitized = parsed.map(item => {
-          let f = item.foto;
-          if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com') || f.startsWith('/productos/'))) {
-            f = undefined;
-          }
-          return { ...item, foto: f, imagen: undefined, image_url: undefined };
-        });
-        setCatalogData(sanitized);
-        return sanitized;
+        baseData = parsed;
       }
     } catch (e) {
       console.warn('Error reading custom catalog from localStorage, fallback to default', e);
     }
   }
 
-  // Load from /catalogo.json
-  try {
-    const res = await fetch('/catalogo.json');
-    if (!res.ok) {
-      throw new Error(`Failed to load catalogo.json: ${res.statusText}`);
+  // Fallback: Load from /catalogo.json
+  if (baseData.length === 0) {
+    try {
+      const res = await fetch('/catalogo.json');
+      if (!res.ok) {
+        throw new Error(`Failed to load catalogo.json: ${res.statusText}`);
+      }
+      baseData = await res.json();
+    } catch (error) {
+      console.error('Error loading default catalog:', error);
+      baseData = [];
     }
-    const data: CatalogItem[] = await res.json();
-    setCatalogData(data);
-    return data;
-  } catch (error) {
-    console.error('Error loading default catalog:', error);
-    return [];
   }
+
+  // Merge overrides so stock and product edits persist across any refresh or hard reload
+  const merged = baseData.map((item) => {
+    const code = item.cod_arti.toUpperCase().trim();
+    const itemOverride = itemOverrides[code] || {};
+    const stockOverride = stockOverrides[code];
+    let f = itemOverride.foto || item.foto;
+    if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com') || f.startsWith('/productos/'))) {
+      f = undefined;
+    }
+
+    return {
+      ...item,
+      ...itemOverride,
+      foto: f,
+      stock: typeof stockOverride === 'number' ? stockOverride : (typeof itemOverride.stock === 'number' ? itemOverride.stock : item.stock)
+    };
+  });
+
+  setCatalogData(merged);
+  return merged;
 };
 
 export const setCatalogData = (items: CatalogItem[]) => {
@@ -181,6 +238,8 @@ export const updateProductStock = (codArti: string, newStock: number): boolean =
   if (!existing) return false;
 
   const validStock = Math.max(0, isNaN(newStock) ? 0 : newStock);
+  saveStockOverride(normCode, validStock);
+
   const updatedItems = catalogData.map(item => {
     if (item.cod_arti.toUpperCase().trim() === normCode) {
       return { ...item, stock: validStock };
@@ -199,6 +258,11 @@ export const updateProductDetails = (codArti: string, updatedFields: Partial<Cat
   const normCode = codArti.toUpperCase().trim();
   const existing = catalogMap.get(normCode);
   if (!existing) return null;
+
+  saveItemOverride(normCode, updatedFields);
+  if (typeof updatedFields.stock === 'number') {
+    saveStockOverride(normCode, Math.max(0, updatedFields.stock));
+  }
 
   let updatedItem: CatalogItem | null = null;
   const updatedItems = catalogData.map(item => {
@@ -233,10 +297,14 @@ export const addNewProduct = (item: CatalogItem): boolean => {
     return true;
   }
 
+  const validStock = Math.max(0, Number(item.stock) || 0);
+  saveStockOverride(normCode, validStock);
+  saveItemOverride(normCode, item);
+
   const newItem: CatalogItem = {
     ...item,
     cod_arti: normCode,
-    stock: Math.max(0, Number(item.stock) || 0)
+    stock: validStock
   };
 
   const updatedItems = [newItem, ...catalogData];
@@ -250,6 +318,16 @@ export const addNewProduct = (item: CatalogItem): boolean => {
 export const deleteProduct = (codArti: string): boolean => {
   const normCode = codArti.toUpperCase().trim();
   if (!catalogMap.has(normCode)) return false;
+
+  try {
+    const stockOverrides = getStockOverrides();
+    delete stockOverrides[normCode];
+    localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(stockOverrides));
+
+    const itemOverrides = getItemOverrides();
+    delete itemOverrides[normCode];
+    localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(itemOverrides));
+  } catch {}
 
   const updatedItems = catalogData.filter(i => i.cod_arti.toUpperCase().trim() !== normCode);
   saveCustomCatalog(updatedItems);
@@ -352,6 +430,8 @@ export const saveCustomCatalog = (items: CatalogItem[]) => {
 
 export const resetToDefaultCatalog = async (): Promise<CatalogItem[]> => {
   localStorage.removeItem(CUSTOM_CATALOG_STORAGE_KEY);
+  localStorage.removeItem(STOCK_OVERRIDES_KEY);
+  localStorage.removeItem(CUSTOM_OVERRIDES_KEY);
   const res = await fetch('/catalogo.json');
   const data: CatalogItem[] = await res.json();
   setCatalogData(data);
