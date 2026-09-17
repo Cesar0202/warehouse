@@ -166,32 +166,39 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     { id: '014=HERRAMIENTAS', label: 'Herramientas' }
   ];
 
-  // The technician ordering portal ONLY requests materials from Almacén 1 (Principal)
-  // and keeps strictly CIN01 as the only cinta aislante
+  const isSameItem = (a: CatalogItem, b: CatalogItem) => {
+    return a.cod_arti === b.cod_arti && (a.almacen || '') === (b.almacen || '') && a.descripcion === b.descripcion;
+  };
+
+  const getItemCartKey = (item: CatalogItem) => {
+    return `${item.almacen || '01'}_${item.cod_arti}_${item.descripcion}`;
+  };
+
+  // The technician ordering portal consolidates all materials, tools and equipment
+  // while deduplicating exact identical items across warehouses and keeping CIN01 as the sole electrical tape
   const techCatalog = useMemo(() => {
     const current = internalCatalog.length > 0 ? internalCatalog : getCatalogData();
     const seen = new Set<string>();
-    const alm1List: CatalogItem[] = [];
+    const list: CatalogItem[] = [];
 
-    // Filter strictly for Almacén 1 (01=ALMACEN PRINCIPAL) and deduplicate by item code
     current.forEach((item) => {
-      if (!item.almacen || item.almacen.startsWith('01')) {
-        const key = item.cod_arti.toUpperCase().trim();
-        const desc = item.descripcion.toUpperCase();
+      const key = item.cod_arti.toUpperCase().trim();
+      const desc = item.descripcion.toUpperCase().trim();
 
-        // Exclude other cinta aislante codes (strictly CIN01 for cinta aislante)
-        if (key !== 'CIN01' && desc.includes('CINTA AISLANTE')) {
-          return;
-        }
+      // Exclude other cinta aislante codes (strictly CIN01 for cinta aislante)
+      if (key !== 'CIN01' && desc.includes('CINTA AISLANTE')) {
+        return;
+      }
 
-        if (!seen.has(key)) {
-          seen.add(key);
-          alm1List.push(item);
-        }
+      // Deduplicate exact same item (same code + same description)
+      const dedupKey = `${key}|||${desc}`;
+      if (!seen.has(dedupKey)) {
+        seen.add(dedupKey);
+        list.push(item);
       }
     });
 
-    return alm1List;
+    return list;
   }, [internalCatalog]);
 
   const searchResults = useMemo(() => {
@@ -203,10 +210,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       const finalMap = new Map<string, { item: CatalogItem; score: number; matchedAlias?: string }>();
 
       aliasMatches.forEach((am) => {
-        const found = techCatalog.find((c) => c.cod_arti.toUpperCase() === am.cod_arti.toUpperCase());
-        if (found) {
-          finalMap.set(found.cod_arti, { item: found, score: 100, matchedAlias: am.alias });
-        }
+        const foundList = techCatalog.filter((c) => c.cod_arti.toUpperCase() === am.cod_arti.toUpperCase());
+        foundList.forEach(found => {
+          finalMap.set(getItemCartKey(found), { item: found, score: 100, matchedAlias: am.alias });
+        });
       });
 
       const terms = q.toUpperCase().split(/\s+/).filter(Boolean);
@@ -225,8 +232,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
           score = 80;
         }
 
-        if (score > 0 && !finalMap.has(item.cod_arti)) {
-          finalMap.set(item.cod_arti, { item, score });
+        const itemKey = getItemCartKey(item);
+        if (score > 0 && !finalMap.has(itemKey)) {
+          finalMap.set(itemKey, { item, score });
         }
       });
 
@@ -244,6 +252,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       'CIN01', // Cinta aislante 1000
       'CIN06', // Cinta teflon
       'CIN02', // Cinta aluminio
+      'EXT15', // Extension electrica
       'DES01', // Desatorador Sapolio
       'TRAP01', // Trapo blanco
       'TRAP02', // Trapo color
@@ -287,6 +296,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       if (descB.includes('teflon') || descB.includes('aislante')) scoreB += 90;
       if (descA.includes('trapo')) scoreA += 80;
       if (descB.includes('trapo')) scoreB += 80;
+      if (descA.includes('extension')) scoreA += 78;
+      if (descB.includes('extension')) scoreB += 78;
       if (descA.includes('desatorador')) scoreA += 75;
       if (descB.includes('desatorador')) scoreB += 75;
       if (descA.includes('silicona') || descA.includes('pegamento')) scoreA += 70;
@@ -303,31 +314,31 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     return sorted.slice(0, 48);
   }, [searchTerm, selectedCategory, techCatalog]);
 
-  const getItemQuantityInCart = (codArti: string): number => {
-    const found = cart.find((c) => c.item.cod_arti === codArti);
+  const getItemQuantityInCart = (item: CatalogItem): number => {
+    const found = cart.find((c) => isSameItem(c.item, item));
     return found ? found.quantity : 0;
   };
 
   const handleAddToCart = (item: CatalogItem) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c.item.cod_arti === item.cod_arti);
+      const existing = prev.find((c) => isSameItem(c.item, item));
       if (existing) {
-        return prev.map((c) => (c.item.cod_arti === item.cod_arti ? { ...c, quantity: c.quantity + 1 } : c));
+        return prev.map((c) => (isSameItem(c.item, item) ? { ...c, quantity: c.quantity + 1 } : c));
       }
       return [...prev, { item, quantity: 1 }];
     });
   };
 
-  const handleUpdateQuantity = (codArti: string, qty: number) => {
+  const handleUpdateQuantity = (item: CatalogItem, qty: number) => {
     if (qty <= 0) {
-      handleRemoveFromCart(codArti);
+      handleRemoveFromCart(item);
       return;
     }
-    setCart((prev) => prev.map((c) => (c.item.cod_arti === codArti ? { ...c, quantity: qty } : c)));
+    setCart((prev) => prev.map((c) => (isSameItem(c.item, item) ? { ...c, quantity: qty } : c)));
   };
 
-  const handleRemoveFromCart = (codArti: string) => {
-    setCart((prev) => prev.filter((c) => c.item.cod_arti !== codArti));
+  const handleRemoveFromCart = (item: CatalogItem) => {
+    setCart((prev) => prev.filter((c) => !isSameItem(c.item, item)));
   };
 
   const handleClearCart = () => {
@@ -500,12 +511,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
           /* Responsive Grid of Product Cards */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {searchResults.map((item) => {
-              const qtyInCart = getItemQuantityInCart(item.cod_arti);
+              const qtyInCart = getItemQuantityInCart(item);
               const imgUrl = getProductImageUrl(item);
+              const itemKey = getItemCartKey(item);
 
               return (
                 <div
-                  key={item.cod_arti}
+                  key={itemKey}
                   className={`p-4 rounded-2xl border transition-all flex items-center gap-4 ${
                     qtyInCart > 0
                       ? 'bg-neutral-900 border-neutral-600 ring-1 ring-white/10'
@@ -554,7 +566,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                         <div className="flex items-center bg-neutral-950 border border-neutral-700 rounded-xl p-1 gap-1.5 shadow-sm">
                           <button
                             type="button"
-                            onClick={() => handleUpdateQuantity(item.cod_arti, qtyInCart - 1)}
+                            onClick={() => handleUpdateQuantity(item, qtyInCart - 1)}
                             className="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors cursor-pointer"
                           >
                             <Minus className="w-3.5 h-3.5" />
@@ -564,7 +576,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           </span>
                           <button
                             type="button"
-                            onClick={() => handleUpdateQuantity(item.cod_arti, qtyInCart + 1)}
+                            onClick={() => handleUpdateQuantity(item, qtyInCart + 1)}
                             className="w-7 h-7 rounded-lg bg-white hover:bg-neutral-200 text-black flex items-center justify-center font-bold transition-colors cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -757,9 +769,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   <div className="space-y-2">
                     {cart.map((c) => {
                       const imgUrl = getProductImageUrl(c.item);
+                      const itemKey = getItemCartKey(c.item);
                       return (
                         <div
-                          key={c.item.cod_arti}
+                          key={itemKey}
                           className="p-3 bg-neutral-950 rounded-xl border border-neutral-800 flex items-center gap-3"
                         >
                           {imgUrl && !imgUrl.startsWith('data:image/svg') ? (
@@ -787,7 +800,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           <div className="flex items-center bg-neutral-900 border border-neutral-800 rounded-lg p-0.5 gap-1">
                             <button
                               type="button"
-                              onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity - 1)}
+                              onClick={() => handleUpdateQuantity(c.item, c.quantity - 1)}
                               className="w-6 h-6 rounded bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center text-xs cursor-pointer"
                             >
                               <Minus className="w-3.5 h-3.5" />
@@ -797,7 +810,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                             </span>
                             <button
                               type="button"
-                              onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity + 1)}
+                              onClick={() => handleUpdateQuantity(c.item, c.quantity + 1)}
                               className="w-6 h-6 rounded bg-white hover:bg-neutral-200 text-black font-bold flex items-center justify-center text-xs cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -806,7 +819,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
                           <button
                             type="button"
-                            onClick={() => handleRemoveFromCart(c.item.cod_arti)}
+                            onClick={() => handleRemoveFromCart(c.item)}
                             className="p-1.5 text-neutral-500 hover:text-red-400 transition-colors cursor-pointer"
                             title="Eliminar artículo"
                           >

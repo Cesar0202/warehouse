@@ -1,515 +1,515 @@
 [
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CIN01",
     "descripcion": "CINTA DE EMBALAJE",
     "familia": "011=CINTAS",
     "unidad": "001=KILOGRAMO",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "ANG02",
     "descripcion": "ANGULO DE 2\"X 3/16",
     "familia": "014=ANGULOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "BAS70",
     "descripcion": "BASE METALICA",
     "familia": "034=METAL",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "VAR200",
     "descripcion": "TRAMPAS DE HUMO(CODOS DE PLANCHA GALVANIZADA)",
     "familia": "039=HUMO",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "TRAN01",
     "descripcion": "TRANSFORMADOR MONOFASICO 75VA 220/24V",
     "familia": "063=TRANSFORMADORES",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "GAS01",
     "descripcion": "GAS REFRIGERANTE 407C SUVA",
     "familia": "081=REFRIGERANTE",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "PLAN05",
     "descripcion": "PLANCHA DE FIERRO NEGRO",
     "familia": "152=PLANCHAS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "BAT01",
     "descripcion": "BATERIAS PARA CONTROL REMOTO",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CAJ01",
     "descripcion": "CAJA Y ACOPLE DE DIFUSOR 14X14\"C/AISL.Y FIBRA",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CAJ02",
     "descripcion": "CAJA ADOSABLE C/LAMPARAS ROJO Y VERDE",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CAP001",
     "descripcion": "CAPACITOR DE 70UF X 370 VAC, 50/60HZ",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CAS001",
     "descripcion": "CASQUILLO TAPER 1210 24",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CAS002",
     "descripcion": "CASQUILLO TAPER 1610 25",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CAS01",
     "descripcion": "CASQUILLO TAPER 2012",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "COR01",
     "descripcion": "CORREA SPZ 1562",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CPU001",
     "descripcion": "CPU MINI CI5",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "CTL001",
     "descripcion": "CONTROL REMOTO LG",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "DAM01",
     "descripcion": "DAMPER MANUAL 24\"X24\"",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "FAJ001",
     "descripcion": "FAJA SPZ 1500",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "FAJ002",
     "descripcion": "FAJA SPZ 1562",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "FAJ003",
     "descripcion": "FAJA SPZ 1537",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "GAB01",
     "descripcion": "GABINETE METALICO ADOSABLE",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "IMP71",
     "descripcion": "SENSOR DE TEMPERATURA Y HUMEDAD",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "IMP72",
     "descripcion": "MODULO DE COMOTROL ASSYVERASYS",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "IMP73",
     "descripcion": "MODULO CONTROLADOR IOM",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "INT0100",
     "descripcion": "INTERCONEXION C/SEÑAL DEL SISTEMA CONTRA",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "JUE001",
     "descripcion": "JUEGO DE ACCESORIOS DE FIERRO P/PRUEBAS DE .",
     "familia": "173=ACCESORIOS",
     "unidad": "041=LOTE",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "KIT30",
     "descripcion": "KIT DE INTERCONEXION",
     "familia": "173=ACCESORIOS",
     "unidad": "015=METRO",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "LLAV01",
     "descripcion": "LLAVE TRIFASICA DE 3X20",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "MAL01",
     "descripcion": "MALLA SINTETICA LAVABLE P/FILTROS",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "MAN001",
     "descripcion": "MANGUERA DE ALTA PRESION 3/4\" 300-900PSI",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "PACK01",
     "descripcion": "DUCTO 17\"X2.40MT,10\"X2.5MT,8\"X3.0MT,8\"X3.30",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "PACK02",
     "descripcion": "DUCTO 20\"EN REDUCCION A 10\" TRONCAL X 5.40MT",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "PACK03",
     "descripcion": "DUCTO 20\" EN REDUCCION A 13\"X3.70MT",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "PACK04",
     "descripcion": "DUCTO 10\" CURVO X 2MT",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "PANT01",
     "descripcion": "MONITOR",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "POL001",
     "descripcion": "POLEA SPZ 150 X 1",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "POL002",
     "descripcion": "POLEA SPZ 85X1",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "POL003",
     "descripcion": "POLEA SPZ 170X1",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "POL004",
     "descripcion": "POLEA SPZ 95X1",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "POL01",
     "descripcion": "POLEA SPZ-200X1",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "RED001",
     "descripcion": "REDUCCION PVC 1\" A 3/4\"",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "RES001",
     "descripcion": "RESISTENCIA ELECTRICA DE 6KW",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "SEN001",
     "descripcion": "SENSOR DE TEMPERATURA DE AGUA",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "SER01",
     "descripcion": "SERVICIO DE MONTAJE",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "TEK001",
     "descripcion": "TEROKAL",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "VAL001",
     "descripcion": "VALVULA DE SERVICIO DE ALTA PRESION",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "VAR100",
     "descripcion": "MATERIAL DIVERSO",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 589.2,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": "720.7"
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "VMH104",
     "descripcion": "NEW BACNET MODULE",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "VMH135",
     "descripcion": "ACC.MODULO CONTACTO EXTERNO",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "LAP01",
     "descripcion": "LAPTOP",
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "ROSE01",
     "descripcion": "ROSEADOR DE LEJIA",
     "familia": "301=LIMPIEZA",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "ROSE02",
     "descripcion": "ROSEADOR DE ALCOHOL ISOPROPILICO",
     "familia": "301=LIMPIEZA",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 9,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "ROSE03",
     "descripcion": "ROSEADOR DE DESINFECTANTE",
     "familia": "301=LIMPIEZA",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 17,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "EQ01",
     "descripcion": "EQUIPOS DE BAJA BCP",
     "familia": "600=EQUIPOS DE CLIENTES EN PLANTA(",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "IMPR01",
     "descripcion": "IMPRESORA",
     "familia": "600=EQUIPOS DE CLIENTES EN PLANTA(",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   },
   {
+    "almacen": "03=ALMACEN TEMPORAL",
     "cod_arti": "BOT100",
     "descripcion": "BOTELLA DE NITROGENO",
     "familia": "900=HERRAMIENTAS VARIOS",
     "unidad": "014=METRO CUBICO",
     "stock": 0,
-    "ubicacion": "",
-    "almacen": "03=ALMACEN TEMPORAL"
+    "ubicacion": ""
   }
 ]

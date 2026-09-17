@@ -198,5 +198,30 @@
     "alias": "amarras",
     "cod_arti": "CIN10",
     "nota": "Precintos"
+  },
+  {
+    "alias": "extension",
+    "cod_arti": "EXT15",
+    "nota": "Extensión eléctrica"
+  },
+  {
+    "alias": "extension electrica",
+    "cod_arti": "EXT15",
+    "nota": "Extensión eléctrica"
+  },
+  {
+    "alias": "extensiones",
+    "cod_arti": "EXT15",
+    "nota": "Extensión eléctrica"
+  },
+  {
+    "alias": "extension vulcanizada",
+    "cod_arti": "EXT03",
+    "nota": "Extensión vulcanizada"
+  },
+  {
+    "alias": "enchufe para extension",
+    "cod_arti": "ENC06",
+    "nota": "Enchufe para extensión"
   }
 ]
