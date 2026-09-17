@@ -47,9 +47,6 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   onSwitchToWarehouse
 }) => {
   const [techName, setTechName] = useState(() => localStorage.getItem(TECH_NAME_STORAGE) || '');
-  const [isEditingNameHeader, setIsEditingNameHeader] = useState(!localStorage.getItem(TECH_NAME_STORAGE));
-  const [isEditingNameModal, setIsEditingNameModal] = useState(false);
-  const [tempModalName, setTempModalName] = useState(techName);
 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallModal, setShowInstallModal] = useState(false);
@@ -154,14 +151,6 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     localStorage.setItem(CART_STORAGE, JSON.stringify(cart));
   }, [cart]);
 
-  const handleSaveName = (name: string) => {
-    const trimmed = name.trim();
-    setTechName(trimmed);
-    setTempModalName(trimmed);
-    localStorage.setItem(TECH_NAME_STORAGE, trimmed);
-    setIsEditingNameHeader(false);
-    setIsEditingNameModal(false);
-  };
 
   const categories = [
     { id: 'TODOS', label: 'Todo el Catálogo' },
@@ -310,15 +299,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     }
 
     if (!techName.trim()) {
-      setIsEditingNameModal(true);
-      setTempModalName('');
-      onShowToast('warning', 'Nombre requerido', 'Por favor ingresa tu nombre de técnico para registrar la solicitud.');
+      onShowToast('warning', 'Nombre requerido', 'Por favor ingresa tu nombre de técnico para enviar la solicitud.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const created = createTechnicianOrder(techName, cart, orderNote);
+      const created = createTechnicianOrder(techName.trim(), cart, orderNote);
       setSubmittedOrder(created);
       setCart([]);
       setOrderNote('');
@@ -365,9 +352,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               </div>
             </div>
 
-            {/* Prominent Technician Name Box & Install App Button */}
-            <div className="flex flex-wrap items-center gap-2">
-              {!isStandalone && (
+            {/* Install App Button */}
+            {!isStandalone && (
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleInstallClick}
@@ -377,53 +364,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   <Smartphone className="w-4 h-4" />
                   <span>Instalar App</span>
                 </button>
-              )}
-
-              <div className="bg-neutral-800/95 border border-neutral-700 rounded-xl px-3.5 py-2 flex items-center justify-between sm:justify-start gap-2.5 shadow-sm">
-                <div className="flex items-center gap-2 text-xs sm:text-sm">
-                  <User className="w-4 h-4 text-blue-400 shrink-0" />
-                  <span className="text-neutral-400 font-medium">Técnico:</span>
-                </div>
-                {isEditingNameHeader ? (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSaveName(techName);
-                    }}
-                    className="flex items-center gap-1.5 flex-1 max-w-xs"
-                  >
-                    <input
-                      type="text"
-                      value={techName}
-                      onChange={(e) => setTechName(e.target.value)}
-                      placeholder="Escribe tu nombre..."
-                      autoFocus
-                      className="flex-1 px-3 py-1.5 bg-neutral-950 border border-neutral-600 rounded-lg text-xs sm:text-sm font-semibold text-white outline-none focus:border-white"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 py-1.5 bg-white text-black hover:bg-neutral-200 rounded-lg text-xs font-bold cursor-pointer shrink-0"
-                      title="Guardar nombre"
-                    >
-                      Guardar
-                    </button>
-                  </form>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingNameHeader(true)}
-                    className="flex items-center gap-2 font-bold text-sm text-white hover:text-neutral-200 cursor-pointer"
-                  >
-                    <span className="text-sm sm:text-base font-extrabold text-white">
-                      {techName || 'Toca aquí para poner tu nombre'}
-                    </span>
-                    <span className="text-xs text-blue-400 font-medium underline underline-offset-2">
-                      (Cambiar)
-                    </span>
-                  </button>
-                )}
               </div>
-            </div>
+            )}
           </div>
 
           {/* Search Input */}
@@ -694,72 +636,38 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               <>
                 {/* Modal Scrollable Items List */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-                  {/* Technician Info Box with Inline Editing */}
-                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800">
-                    {isEditingNameModal ? (
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleSaveName(tempModalName);
-                        }}
-                        className="space-y-2"
-                      >
-                        <label className="block text-[11px] font-semibold text-neutral-400">
-                          Tu Nombre o Código de Técnico:
-                        </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={tempModalName}
-                            onChange={(e) => setTempModalName(e.target.value)}
-                            placeholder="Escribe tu nombre..."
-                            autoFocus
-                            className="flex-1 px-3.5 py-2 bg-neutral-900 border border-emerald-500 rounded-xl text-xs sm:text-sm font-bold text-white outline-none"
-                          />
-                          <button
-                            type="submit"
-                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs rounded-xl cursor-pointer shrink-0"
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setTempModalName(techName);
-                              setIsEditingNameModal(false);
-                            }}
-                            className="p-2 text-neutral-400 hover:text-white rounded-xl bg-neutral-800 cursor-pointer"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-neutral-800 text-emerald-400 flex items-center justify-center">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <span className="text-[10px] uppercase font-semibold text-neutral-500 block">
-                              Técnico Responsable
-                            </span>
-                            <span className="text-xs sm:text-sm font-bold text-white">
-                              {techName || <span className="text-amber-400 italic">No especificado</span>}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTempModalName(techName);
-                            setIsEditingNameModal(true);
-                          }}
-                          className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-emerald-400 text-xs font-bold rounded-lg transition-colors cursor-pointer border border-neutral-700"
-                        >
-                          Cambiar
-                        </button>
-                      </div>
+                  {/* Technician Info Box (Obligatorio en formulario) */}
+                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-2">
+                    <label className="flex items-center justify-between text-xs font-bold text-neutral-200">
+                      <span className="flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-blue-400" />
+                        <span>Técnico Responsable</span>
+                        <span className="text-red-400 font-bold">*</span>
+                      </span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 uppercase tracking-wider">
+                        Obligatorio
+                      </span>
+                    </label>
+                    <input
+                      type="text"
+                      value={techName}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setTechName(val);
+                        localStorage.setItem(TECH_NAME_STORAGE, val);
+                      }}
+                      placeholder="Escribe tu nombre o código de técnico (ej: Fernando)..."
+                      autoFocus={!techName.trim()}
+                      className={`w-full px-3.5 py-2.5 bg-neutral-900 border rounded-xl text-xs sm:text-sm font-bold text-white placeholder-neutral-500 outline-none transition-all ${
+                        !techName.trim()
+                          ? 'border-amber-500/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
+                          : 'border-neutral-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                      }`}
+                    />
+                    {!techName.trim() && (
+                      <p className="text-[11px] text-amber-400 font-medium">
+                        * Ingresa tu nombre para poder enviar el pedido al almacén.
+                      </p>
                     )}
                   </div>
 
