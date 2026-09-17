@@ -167,6 +167,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   ];
 
   // The technician ordering portal ONLY requests materials from Almacén 1 (Principal)
+  // and keeps strictly CIN01 as the only cinta aislante
   const techCatalog = useMemo(() => {
     const current = internalCatalog.length > 0 ? internalCatalog : getCatalogData();
     const seen = new Set<string>();
@@ -176,6 +177,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     current.forEach((item) => {
       if (!item.almacen || item.almacen.startsWith('01')) {
         const key = item.cod_arti.toUpperCase().trim();
+        const desc = item.descripcion.toUpperCase();
+
+        // Exclude other cinta aislante codes (strictly CIN01 for cinta aislante)
+        if (key !== 'CIN01' && desc.includes('CINTA AISLANTE')) {
+          return;
+        }
+
         if (!seen.has(key)) {
           seen.add(key);
           alm1List.push(item);
@@ -233,13 +241,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     }
 
     const POPULAR_PRIORITY_CODES = [
-      'CIN08', // Cinta teflon
-      'CIN01', // Cinta aislante negra
+      'CIN01', // Cinta aislante 1000
+      'CIN06', // Cinta teflon
       'CIN02', // Cinta aluminio
       'DES01', // Desatorador Sapolio
       'TRAP01', // Trapo blanco
       'TRAP02', // Trapo color
-      'PEG01', // Pegamento PVC
+      'PEG01', // Pegamento PVC / Africano
       'SIL01', // Silicona
       'CUR06', // Curva 3/4"
       'CUR09', // Curva 1/2"
