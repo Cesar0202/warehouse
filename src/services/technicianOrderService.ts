@@ -35,9 +35,9 @@ export const CATALOG_SYNC_EVENT = 'catalog_sync_updated';
 // MQTT Topics for reliable real-time sync between phones and warehouse
 const MQTT_TOPIC_ORDERS_STATE = 'cesar_wh_orders_v3/state';
 const MQTT_TOPIC_ORDERS_ACTION = 'cesar_wh_orders_v3/action';
-const MQTT_TOPIC_ITEM_PREFIX = 'cesar_wh_item_v2/'; // + cod_arti
-const MQTT_TOPIC_ITEM_WILDCARD = 'cesar_wh_item_v2/+';
-const MQTT_TOPIC_SYNC_REQ = 'cesar_wh_sync_v2/request';
+const MQTT_TOPIC_ITEM_PREFIX = 'cesar_wh_item_v3/'; // + itemKey
+const MQTT_TOPIC_ITEM_WILDCARD = 'cesar_wh_item_v3/+';
+const MQTT_TOPIC_SYNC_REQ = 'cesar_wh_sync_v3/request';
 
 const BROKER_URLS = [
   'wss://broker.emqx.io:8084/mqtt',
@@ -219,21 +219,23 @@ export const initRealtimeSync = (): void => {
           const data = JSON.parse(payload.toString());
           if (data && data.cod_arti) {
             const code = data.cod_arti.toUpperCase().trim();
+            const alm = data.almacen ? (data.almacen.startsWith('02') ? '02=ALMACEN DE ACTIVOS FIJOS' : data.almacen.startsWith('03') ? '03=ALMACEN TEMPORAL' : '01=ALMACEN PRINCIPAL') : '01=ALMACEN PRINCIPAL';
+            const key = `${alm.toUpperCase()}__${code}`;
             
-            const currentItemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
-            currentItemOverrides[code] = {
-              ...(currentItemOverrides[code] || {}),
+            const currentItemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v2') || '{}');
+            currentItemOverrides[key] = {
+              ...(currentItemOverrides[key] || {}),
               ...(data.fields || {})
             };
-            localStorage.setItem('app_item_overrides_v1', JSON.stringify(currentItemOverrides));
+            localStorage.setItem('app_item_overrides_v2', JSON.stringify(currentItemOverrides));
 
             if (typeof data.stock === 'number') {
-              const currentStockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
-              currentStockOverrides[code] = data.stock;
-              localStorage.setItem('app_stock_overrides_v1', JSON.stringify(currentStockOverrides));
+              const currentStockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v2') || '{}');
+              currentStockOverrides[key] = data.stock;
+              localStorage.setItem('app_stock_overrides_v2', JSON.stringify(currentStockOverrides));
             }
 
-            window.dispatchEvent(new CustomEvent(CATALOG_SYNC_EVENT, { detail: data }));
+            window.dispatchEvent(new CustomEvent(CATALOG_SYNC_EVENT, { detail: { ...data, key } }));
           }
         } catch (err) {
           console.warn('Error parsing single item sync from MQTT:', err);
@@ -256,20 +258,24 @@ export const initRealtimeSync = (): void => {
 
 const pushLocalOverridesToRetain = () => {
   try {
-    const itemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
-    const stockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v1') || '{}');
-    const allCodes = Array.from(new Set([...Object.keys(itemOverrides), ...Object.keys(stockOverrides)]));
+    const itemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v2') || '{}');
+    const stockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v2') || '{}');
+    const allKeys = Array.from(new Set([...Object.keys(itemOverrides), ...Object.keys(stockOverrides)]));
 
-    if (allCodes.length === 0 || !mqttClient || !mqttClient.connected) return;
+    if (allKeys.length === 0 || !mqttClient || !mqttClient.connected) return;
 
-    allCodes.forEach((code) => {
+    allKeys.forEach((key) => {
+      const parts = key.split('__');
+      const alm = parts.length > 1 ? parts[0] : '01=ALMACEN PRINCIPAL';
+      const code = parts.length > 1 ? parts[1] : parts[0];
       const payload = JSON.stringify({
         cod_arti: code,
-        fields: itemOverrides[code] || {},
-        stock: stockOverrides[code],
+        almacen: alm,
+        fields: itemOverrides[key] || {},
+        stock: stockOverrides[key],
         timestamp: Date.now()
       });
-      mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(code), payload, { qos: 1, retain: true });
+      mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(key), payload, { qos: 1, retain: true });
     });
   } catch (e) {
     console.warn('Error pushing local overrides to retain:', e);
@@ -300,20 +306,23 @@ export const broadcastOrders = (orders: TechnicianOrder[]): void => {
 /**
  * Broadcast single item update (photo, description, stock) to all phones via retained MQTT
  */
-export const broadcastCatalogItemSync = (codArti: string, fields: Partial<CatalogItem>, stock?: number): void => {
+export const broadcastCatalogItemSync = (codArti: string, fields: Partial<CatalogItem>, stock?: number, almacen?: string): void => {
   if (!mqttClient || !mqttClient.connected) {
     initRealtimeSync();
   }
 
   try {
     const code = codArti.toUpperCase().trim();
+    const alm = almacen ? (almacen.startsWith('02') ? '02=ALMACEN DE ACTIVOS FIJOS' : almacen.startsWith('03') ? '03=ALMACEN TEMPORAL' : '01=ALMACEN PRINCIPAL') : '01=ALMACEN PRINCIPAL';
+    const key = `${alm.toUpperCase()}__${code}`;
     const payload = JSON.stringify({
       cod_arti: code,
+      almacen: alm,
       fields,
       stock,
       timestamp: Date.now()
     });
-    mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(code), payload, { qos: 1, retain: true });
+    mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(key), payload, { qos: 1, retain: true });
   } catch (e) {
     console.warn('Error broadcasting item sync:', e);
   }
@@ -334,7 +343,7 @@ export const forceSyncAllCatalogToPhones = (): number => {
     initRealtimeSync();
   }
   pushLocalOverridesToRetain();
-  const itemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v1') || '{}');
+  const itemOverrides = JSON.parse(localStorage.getItem('app_item_overrides_v2') || '{}');
   return Object.keys(itemOverrides).length;
 };
 

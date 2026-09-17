@@ -7,9 +7,22 @@ let catalogData: CatalogItem[] = [];
 let catalogMap = new Map<string, CatalogItem>();
 let catalogFuse: Fuse<CatalogItem> | null = null;
 
-const CUSTOM_CATALOG_STORAGE_KEY = 'app_custom_catalog_v2';
-const STOCK_OVERRIDES_KEY = 'app_stock_overrides_v1';
-const CUSTOM_OVERRIDES_KEY = 'app_item_overrides_v1';
+const STOCK_OVERRIDES_KEY = 'app_stock_overrides_v2';
+const CUSTOM_OVERRIDES_KEY = 'app_item_overrides_v2';
+
+export const normalizeWarehouseName = (alm?: string): string => {
+  if (!alm) return '01=ALMACEN PRINCIPAL';
+  const a = alm.trim();
+  if (a.startsWith('02')) return '02=ALMACEN DE ACTIVOS FIJOS';
+  if (a.startsWith('03')) return '03=ALMACEN TEMPORAL';
+  return '01=ALMACEN PRINCIPAL';
+};
+
+export const getItemKey = (codArti: string, almacen?: string): string => {
+  const normCode = (codArti || '').toUpperCase().trim();
+  const alm = normalizeWarehouseName(almacen).toUpperCase();
+  return `${alm}__${normCode}`;
+};
 
 export const getStockOverrides = (): Record<string, number> => {
   try {
@@ -22,17 +35,13 @@ export const getStockOverrides = (): Record<string, number> => {
 
 export const saveStockOverride = (codArti: string, stock: number, almacen?: string) => {
   try {
-    const normCode = codArti.toUpperCase().trim();
-    const alm = almacen ? almacen.toUpperCase().trim() : '';
-    const key = alm ? `${alm}_${normCode}` : normCode;
-
+    const key = getItemKey(codArti, almacen);
     const overrides = getStockOverrides();
     overrides[key] = stock;
-    if (alm) overrides[normCode] = stock;
     localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(overrides));
     
     const itemOverrides = getItemOverrides();
-    broadcastCatalogItemSync(normCode, itemOverrides[key] || itemOverrides[normCode] || {}, stock);
+    broadcastCatalogItemSync(codArti, itemOverrides[key] || {}, stock, almacen);
   } catch (e) {
     console.error('Error saving stock override', e);
   }
@@ -49,86 +58,72 @@ export const getItemOverrides = (): Record<string, Partial<CatalogItem>> => {
 
 export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>, almacen?: string) => {
   try {
-    const normCode = codArti.toUpperCase().trim();
-    const alm = almacen ? almacen.toUpperCase().trim() : '';
-    const key = alm ? `${alm}_${normCode}` : normCode;
-
+    const key = getItemKey(codArti, almacen);
     const overrides = getItemOverrides();
     overrides[key] = { ...(overrides[key] || {}), ...fields };
-    if (alm) overrides[normCode] = { ...(overrides[normCode] || {}), ...fields };
     localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(overrides));
     
     const stockOverrides = getStockOverrides();
-    broadcastCatalogItemSync(normCode, overrides[key] || overrides[normCode], stockOverrides[key] || stockOverrides[normCode]);
+    broadcastCatalogItemSync(codArti, overrides[key], stockOverrides[key], almacen);
   } catch (e) {
     console.error('Error saving item override', e);
   }
 };
 
 export const initCatalog = async (): Promise<CatalogItem[]> => {
+  // Purge legacy corrupted keys from previous session
+  try {
+    localStorage.removeItem('app_custom_catalog');
+    localStorage.removeItem('app_custom_catalog_v1');
+    localStorage.removeItem('app_custom_catalog_v2');
+    localStorage.removeItem('app_stock_overrides_v1');
+    localStorage.removeItem('app_item_overrides_v1');
+  } catch {}
+
   const stockOverrides = getStockOverrides();
   const itemOverrides = getItemOverrides();
-  let baseData: CatalogItem[] = [];
-
-  // Check if there is cached/updated catalog in localStorage
-  const localCatalog = localStorage.getItem(CUSTOM_CATALOG_STORAGE_KEY);
-  if (localCatalog) {
-    try {
-      const parsed: CatalogItem[] = JSON.parse(localCatalog);
-      // Ensure local catalog contains all warehouses (if older version had only Alm 1, reload)
-      if (Array.isArray(parsed) && parsed.length > 4400) {
-        baseData = parsed;
-      }
-    } catch (e) {
-      console.warn('Error reading custom catalog from localStorage, fallback to default', e);
-    }
-  }
 
   // Load from /catalogo.json, /catalogo_alm2.json, and /catalogo_alm3.json
-  if (baseData.length === 0) {
-    try {
-      const [res1, res2, res3] = await Promise.allSettled([
-        fetch('/catalogo.json'),
-        fetch('/catalogo_alm2.json'),
-        fetch('/catalogo_alm3.json')
-      ]);
+  const cacheBuster = '?t=' + Date.now();
+  let cat1: CatalogItem[] = [];
+  let cat2: CatalogItem[] = [];
+  let cat3: CatalogItem[] = [];
 
-      let cat1: CatalogItem[] = [];
-      let cat2: CatalogItem[] = [];
-      let cat3: CatalogItem[] = [];
+  try {
+    const [res1, res2, res3] = await Promise.allSettled([
+      fetch('/catalogo.json' + cacheBuster),
+      fetch('/catalogo_alm2.json' + cacheBuster),
+      fetch('/catalogo_alm3.json' + cacheBuster)
+    ]);
 
-      if (res1.status === 'fulfilled' && res1.value.ok) {
-        cat1 = (await res1.value.json()).map((i: any) => ({
-          ...i,
-          almacen: i.almacen || '01=ALMACEN PRINCIPAL'
-        }));
-      }
-      if (res2.status === 'fulfilled' && res2.value.ok) {
-        cat2 = (await res2.value.json()).map((i: any) => ({
-          ...i,
-          almacen: i.almacen || '02=ALMACEN DE ACTIVOS FIJOS'
-        }));
-      }
-      if (res3.status === 'fulfilled' && res3.value.ok) {
-        cat3 = (await res3.value.json()).map((i: any) => ({
-          ...i,
-          almacen: i.almacen || '03=ALMACEN TEMPORAL'
-        }));
-      }
-
-      baseData = [...cat1, ...cat2, ...cat3];
-    } catch (error) {
-      console.error('Error loading default catalogs:', error);
-      baseData = [];
+    if (res1.status === 'fulfilled' && res1.value.ok) {
+      cat1 = (await res1.value.json()).map((i: any) => ({
+        ...i,
+        almacen: '01=ALMACEN PRINCIPAL'
+      }));
     }
+    if (res2.status === 'fulfilled' && res2.value.ok) {
+      cat2 = (await res2.value.json()).map((i: any) => ({
+        ...i,
+        almacen: '02=ALMACEN DE ACTIVOS FIJOS'
+      }));
+    }
+    if (res3.status === 'fulfilled' && res3.value.ok) {
+      cat3 = (await res3.value.json()).map((i: any) => ({
+        ...i,
+        almacen: '03=ALMACEN TEMPORAL'
+      }));
+    }
+  } catch (error) {
+    console.error('Error loading default catalogs:', error);
   }
 
-  // Merge overrides so stock and product edits persist across any refresh or hard reload
+  const baseData = [...cat1, ...cat2, ...cat3];
+
   const merged = baseData.map((item) => {
-    const code = item.cod_arti.toUpperCase().trim();
-    const almCode = item.almacen ? `${item.almacen}_${code}` : code;
-    const itemOverride = itemOverrides[almCode] || itemOverrides[code] || {};
-    const stockOverride = stockOverrides[almCode] !== undefined ? stockOverrides[almCode] : stockOverrides[code];
+    const key = getItemKey(item.cod_arti, item.almacen);
+    const itemOverride = itemOverrides[key] || {};
+    const stockOverride = stockOverrides[key];
     let f = itemOverride.foto || item.foto;
     if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
@@ -152,19 +147,23 @@ export const setCatalogData = (items: CatalogItem[]) => {
     if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
     }
-    return { ...item, foto: f, imagen: undefined, image_url: undefined };
+    return { 
+      ...item, 
+      almacen: normalizeWarehouseName(item.almacen),
+      foto: f, 
+      imagen: undefined, 
+      image_url: undefined 
+    };
   });
 
   catalogData = sanitized;
   catalogMap.clear();
   for (const item of sanitized) {
+    const key = getItemKey(item.cod_arti, item.almacen);
+    catalogMap.set(key, item);
     const code = item.cod_arti.toUpperCase().trim();
-    const alm = (item.almacen || '').toUpperCase().trim();
     if (!catalogMap.has(code)) {
       catalogMap.set(code, item);
-    }
-    if (alm) {
-      catalogMap.set(`${alm}_${code}`, item);
     }
   }
 
@@ -187,7 +186,12 @@ export const getCatalogData = (): CatalogItem[] => {
   return catalogData;
 };
 
-export const getCatalogItemByCode = (codArti: string): CatalogItem | undefined => {
+export const getCatalogItemByCode = (codArti: string, almacen?: string): CatalogItem | undefined => {
+  if (almacen) {
+    const key = getItemKey(codArti, almacen);
+    const item = catalogMap.get(key);
+    if (item) return item;
+  }
   return catalogMap.get(codArti.toUpperCase().trim());
 };
 
@@ -196,81 +200,83 @@ export const searchCatalogFuzzy = (query: string, limit = 50): { item: CatalogIt
   const q = query.trim().toUpperCase();
   const qTerms = q.split(/\s+/).filter(t => t.length > 0);
 
-  // 1. Exact code match
-  const exactCode = catalogMap.get(q);
-  if (exactCode) {
-    return [{ item: exactCode, score: 100 }];
-  }
-
-  // 2. Direct Substring & Word Match scoring across all catalog data
   const scoredDirect: { item: CatalogItem; score: number }[] = [];
-  const seenCodes = new Set<string>();
+  const seenKeys = new Set<string>();
 
   for (const item of catalogData) {
     const desc = item.descripcion.toUpperCase();
     const cod = item.cod_arti.toUpperCase();
     const fam = (item.familia || '').toUpperCase();
+    const key = getItemKey(item.cod_arti, item.almacen) + '_' + desc;
 
-    // Exact full description match
+    if (seenKeys.has(key)) continue;
+
+    // 1. Exact code match
+    if (cod === q) {
+      scoredDirect.push({ item, score: 1000 });
+      seenKeys.add(key);
+      continue;
+    }
+
+    // 2. Exact full description match
     if (desc === q) {
-      scoredDirect.push({ item, score: 100 });
-      seenCodes.add(cod);
+      scoredDirect.push({ item, score: 950 });
+      seenKeys.add(key);
       continue;
     }
 
-    // Description starts with query (e.g. "DESATORADOR...")
+    // 3. Description starts with query
     if (desc.startsWith(q)) {
-      scoredDirect.push({ item, score: 98 });
-      seenCodes.add(cod);
+      scoredDirect.push({ item, score: 500 });
+      seenKeys.add(key);
       continue;
     }
 
-    // Code starts with query
+    // 4. Code starts with query
     if (cod.startsWith(q)) {
-      scoredDirect.push({ item, score: 97 });
-      seenCodes.add(cod);
+      scoredDirect.push({ item, score: 400 });
+      seenKeys.add(key);
       continue;
     }
 
-    // Contains the whole query phrase as a word
+    // 5. Whole word in description
     const wordBoundaryRegex = new RegExp(`(?:^|\\s)${q}(?:$|\\s|\\,|\\.|\\-)`, 'i');
     if (wordBoundaryRegex.test(desc)) {
-      scoredDirect.push({ item, score: 95 });
-      seenCodes.add(cod);
+      scoredDirect.push({ item, score: 300 });
+      seenKeys.add(key);
       continue;
     }
 
-    // Contains the whole query anywhere in description
+    // 6. Substring in description
     if (desc.includes(q)) {
-      scoredDirect.push({ item, score: 90 });
-      seenCodes.add(cod);
+      scoredDirect.push({ item, score: 200 });
+      seenKeys.add(key);
       continue;
     }
 
-    // Contains all terms (multi-word search like "curva 3/4 conduit")
+    // 7. Contains all terms
     if (qTerms.length > 1 && qTerms.every(term => desc.includes(term) || cod.includes(term) || fam.includes(term))) {
-      scoredDirect.push({ item, score: 85 });
-      seenCodes.add(cod);
+      scoredDirect.push({ item, score: 150 });
+      seenKeys.add(key);
       continue;
     }
   }
 
-  // 3. Fallback to Fuse.js for typo tolerance if few direct matches
+  // 8. Fallback to Fuse.js
   if (catalogFuse && scoredDirect.length < limit) {
     const fuseResults = catalogFuse.search(query, { limit: limit * 2 });
     for (const r of fuseResults) {
-      const cod = r.item.cod_arti.toUpperCase();
-      if (!seenCodes.has(cod)) {
-        const score = Math.round((1 - (r.score ?? 0)) * 80); // max 80% for pure fuzzy
+      const key = getItemKey(r.item.cod_arti, r.item.almacen) + '_' + r.item.descripcion.toUpperCase();
+      if (!seenKeys.has(key)) {
+        const score = Math.round((1 - (r.score ?? 0)) * 80);
         if (score >= 40) {
           scoredDirect.push({ item: r.item, score });
-          seenCodes.add(cod);
+          seenKeys.add(key);
         }
       }
     }
   }
 
-  // Sort by score descending
   scoredDirect.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return a.item.descripcion.localeCompare(b.item.descripcion);
@@ -279,12 +285,9 @@ export const searchCatalogFuzzy = (query: string, limit = 50): { item: CatalogIt
   return scoredDirect.slice(0, limit);
 };
 
-/**
- * Update stock of a specific product
- */
 export const updateProductStock = (codArti: string, newStock: number, almacen?: string): boolean => {
   const normCode = codArti.toUpperCase().trim();
-  const alm = almacen ? almacen.toUpperCase().trim() : '';
+  const alm = normalizeWarehouseName(almacen);
 
   const validStock = Math.max(0, isNaN(newStock) ? 0 : newStock);
   saveStockOverride(normCode, validStock, alm);
@@ -292,8 +295,8 @@ export const updateProductStock = (codArti: string, newStock: number, almacen?: 
   let updated = false;
   const updatedItems = catalogData.map(item => {
     const itemCode = item.cod_arti.toUpperCase().trim();
-    const itemAlm = (item.almacen || '').toUpperCase().trim();
-    if (itemCode === normCode && (!alm || itemAlm === alm)) {
+    const itemAlm = normalizeWarehouseName(item.almacen);
+    if (itemCode === normCode && itemAlm === alm) {
       updated = true;
       return { ...item, stock: validStock };
     }
@@ -301,17 +304,14 @@ export const updateProductStock = (codArti: string, newStock: number, almacen?: 
   });
 
   if (updated) {
-    saveCustomCatalog(updatedItems);
+    setCatalogData(updatedItems);
   }
   return updated;
 };
 
-/**
- * Update full details of a specific product
- */
 export const updateProductDetails = (codArti: string, updatedFields: Partial<CatalogItem>, almacen?: string): CatalogItem | null => {
   const normCode = codArti.toUpperCase().trim();
-  const alm = almacen ? almacen.toUpperCase().trim() : '';
+  const alm = normalizeWarehouseName(almacen);
 
   saveItemOverride(normCode, updatedFields, alm);
   if (typeof updatedFields.stock === 'number') {
@@ -321,8 +321,8 @@ export const updateProductDetails = (codArti: string, updatedFields: Partial<Cat
   let updatedItem: CatalogItem | null = null;
   const updatedItems = catalogData.map(item => {
     const itemCode = item.cod_arti.toUpperCase().trim();
-    const itemAlm = (item.almacen || '').toUpperCase().trim();
-    if (itemCode === normCode && (!alm || itemAlm === alm)) {
+    const itemAlm = normalizeWarehouseName(item.almacen);
+    if (itemCode === normCode && itemAlm === alm) {
       updatedItem = {
         ...item,
         ...updatedFields,
@@ -335,17 +335,14 @@ export const updateProductDetails = (codArti: string, updatedFields: Partial<Cat
   });
 
   if (updatedItem) {
-    saveCustomCatalog(updatedItems);
+    setCatalogData(updatedItems);
   }
   return updatedItem;
 };
 
-/**
- * Add a new custom product to inventory
- */
 export const addNewProduct = (item: CatalogItem): boolean => {
   const normCode = item.cod_arti.toUpperCase().trim();
-  const alm = (item.almacen || '').toUpperCase().trim();
+  const alm = normalizeWarehouseName(item.almacen);
   if (!normCode) return false;
 
   const validStock = Math.max(0, Number(item.stock) || 0);
@@ -354,50 +351,43 @@ export const addNewProduct = (item: CatalogItem): boolean => {
 
   const newItem: CatalogItem = {
     ...item,
+    almacen: alm,
     cod_arti: normCode,
     stock: validStock
   };
 
   const updatedItems = [newItem, ...catalogData];
-  saveCustomCatalog(updatedItems);
+  setCatalogData(updatedItems);
   return true;
 };
 
-/**
- * Delete a product from inventory
- */
 export const deleteProduct = (codArti: string, almacen?: string): boolean => {
   const normCode = codArti.toUpperCase().trim();
-  const alm = almacen ? almacen.toUpperCase().trim() : '';
-  const key = alm ? `${alm}_${normCode}` : normCode;
+  const alm = normalizeWarehouseName(almacen);
+  const key = getItemKey(normCode, alm);
 
   try {
     const stockOverrides = getStockOverrides();
     delete stockOverrides[key];
-    delete stockOverrides[normCode];
     localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(stockOverrides));
 
     const itemOverrides = getItemOverrides();
     delete itemOverrides[key];
-    delete itemOverrides[normCode];
     localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(itemOverrides));
   } catch {}
 
   const updatedItems = catalogData.filter(i => {
     const itemCode = i.cod_arti.toUpperCase().trim();
-    const itemAlm = (i.almacen || '').toUpperCase().trim();
-    if (itemCode === normCode && (!alm || itemAlm === alm)) {
+    const itemAlm = normalizeWarehouseName(i.almacen);
+    if (itemCode === normCode && itemAlm === alm) {
       return false;
     }
     return true;
   });
-  saveCustomCatalog(updatedItems);
+  setCatalogData(updatedItems);
   return true;
 };
 
-/**
- * Parse an uploaded Excel (.xlsx, .xls) or CSV file and return catalog items
- */
 export const parseExcelCatalogFile = async (file: File): Promise<CatalogItem[]> => {
   const buffer = await file.arrayBuffer();
   const wb = XLSX.read(buffer, { type: 'array' });
@@ -482,19 +472,10 @@ export const parseExcelCatalogFile = async (file: File): Promise<CatalogItem[]> 
 
 export const saveCustomCatalog = (items: CatalogItem[]) => {
   setCatalogData(items);
-  try {
-    localStorage.setItem(CUSTOM_CATALOG_STORAGE_KEY, JSON.stringify(items));
-  } catch (e) {
-    console.warn('LocalStorage limit reached for custom catalog', e);
-  }
 };
 
 export const resetToDefaultCatalog = async (): Promise<CatalogItem[]> => {
-  localStorage.removeItem(CUSTOM_CATALOG_STORAGE_KEY);
   localStorage.removeItem(STOCK_OVERRIDES_KEY);
   localStorage.removeItem(CUSTOM_OVERRIDES_KEY);
-  const res = await fetch('/catalogo.json');
-  const data: CatalogItem[] = await res.json();
-  setCatalogData(data);
-  return data;
+  return initCatalog();
 };

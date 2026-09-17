@@ -51,7 +51,7 @@
     "familia": "081=REFRIGERANTE",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "407C"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -150,7 +150,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "AKB74955617"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -204,7 +204,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "NS8000"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -213,7 +213,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "LC-SBH200-0LA"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -222,7 +222,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "VAC1002-0"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -276,7 +276,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "-20 A 50 ºC"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -393,7 +393,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "SEN02133"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -429,7 +429,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 589.2,
-    "ubicacion": "720.7"
+    "ubicacion": ""
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -438,7 +438,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "MIM-B17BN"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -447,7 +447,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "MIM-B14"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -456,7 +456,7 @@
     "familia": "173=ACCESORIOS",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "L45-B4205FL"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
@@ -501,7 +501,7 @@
     "familia": "600=EQUIPOS DE CLIENTES EN PLANTA(",
     "unidad": "007=UNIDAD (BIENES)",
     "stock": 0,
-    "ubicacion": ""
+    "ubicacion": "L575"
   },
   {
     "almacen": "03=ALMACEN TEMPORAL",
