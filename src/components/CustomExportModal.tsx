@@ -52,6 +52,14 @@ export const CustomExportModal: React.FC<CustomExportModalProps> = ({
       width: 6
     },
     {
+      id: 'almacen',
+      label: 'Almacén de Origen',
+      defaultHeader: 'Almacén',
+      enabled: true,
+      getter: (item) => item.almacen || '01=ALMACEN PRINCIPAL',
+      width: 22
+    },
+    {
       id: 'cod_arti',
       label: 'Código de Artículo (Cod.Arti.)',
       defaultHeader: 'Cod.Arti.',

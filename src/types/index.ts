@@ -5,6 +5,7 @@ export interface CatalogItem {
   unidad: string;
   stock: number;
   ubicacion: string;
+  almacen?: string;
   foto?: string;
   imagen?: string;
   image_url?: string;

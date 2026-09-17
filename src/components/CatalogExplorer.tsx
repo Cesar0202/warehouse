@@ -33,6 +33,12 @@ interface CatalogExplorerProps {
 type SortField = 'cod_arti' | 'descripcion' | 'familia' | 'stock' | 'ubicacion';
 type SortOrder = 'asc' | 'desc';
 
+export const WAREHOUSES = [
+  { id: 'ALM1', name: 'Almacén 1 (Principal)', prefix: '01' },
+  { id: 'ALM2', name: 'Almacén 2 (Activos Fijos)', prefix: '02' },
+  { id: 'ALM3', name: 'Almacén 3 (Temporal)', prefix: '03' }
+] as const;
+
 export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   catalog,
   onOpenEditModal,
@@ -41,6 +47,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   onCatalogUpdated,
   onShowToast
 }) => {
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>('ALM1');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFamily, setSelectedFamily] = useState('ALL');
   const [selectedLocation, setSelectedLocation] = useState('ALL');
@@ -61,38 +68,65 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   // Export Modal
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
-  // Unique families and locations
+  // Helper to determine warehouse of an item
+  const getItemWarehouseId = (item: CatalogItem): string => {
+    if (item.almacen?.startsWith('02')) return 'ALM2';
+    if (item.almacen?.startsWith('03')) return 'ALM3';
+    return 'ALM1';
+  };
+
+  // Warehouse counts across the entire catalog
+  const warehouseCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALM1: 0, ALM2: 0, ALM3: 0 };
+    catalog.forEach(item => {
+      const wh = getItemWarehouseId(item);
+      counts[wh] = (counts[wh] || 0) + 1;
+    });
+    return counts;
+  }, [catalog]);
+
+  // Current active warehouse items
+  const warehouseItems = useMemo(() => {
+    return catalog.filter(item => getItemWarehouseId(item) === selectedWarehouse);
+  }, [catalog, selectedWarehouse]);
+
+  // Unique families and locations for active warehouse
   const families = useMemo(() => {
     const set = new Set<string>();
-    catalog.forEach(item => {
+    warehouseItems.forEach(item => {
       if (item.familia) set.add(item.familia);
     });
     return Array.from(set).sort();
-  }, [catalog]);
+  }, [warehouseItems]);
 
   const locations = useMemo(() => {
     const set = new Set<string>();
-    catalog.forEach(item => {
+    warehouseItems.forEach(item => {
       if (item.ubicacion) set.add(item.ubicacion);
     });
     return Array.from(set).sort();
-  }, [catalog]);
+  }, [warehouseItems]);
 
-  // Filtering
+  // Filtering within active warehouse
   const filteredItems = useMemo(() => {
     let list: CatalogItem[] = [];
 
     if (searchTerm.trim().length >= 1) {
       const q = searchTerm.trim().toUpperCase();
-      const codeMatches = catalog.filter(i => i.cod_arti.toUpperCase().includes(q));
+      const codeMatches = warehouseItems.filter(i => i.cod_arti.toUpperCase().includes(q));
       if (codeMatches.length > 0 && q.length >= 2) {
         list = codeMatches;
       } else {
-        const fuzzy = searchCatalogFuzzy(searchTerm, 300);
-        list = fuzzy.map(f => f.item);
+        const terms = q.split(/\s+/).filter(Boolean);
+        list = warehouseItems.filter(item => {
+          const desc = item.descripcion.toUpperCase();
+          const cod = item.cod_arti.toUpperCase();
+          const fam = (item.familia || '').toUpperCase();
+          return terms.every(t => desc.includes(t) || cod.includes(t) || fam.includes(t));
+        });
       }
     } else {
-      list = [...catalog];
+      list = [...warehouseItems];
     }
 
     if (selectedFamily !== 'ALL') {
@@ -149,7 +183,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
     }
 
     return list;
-  }, [catalog, searchTerm, selectedFamily, selectedLocation, stockFilter, sortField, sortOrder, hasUserSorted]);
+  }, [warehouseItems, searchTerm, selectedFamily, selectedLocation, stockFilter, sortField, sortOrder, hasUserSorted]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const paginatedItems = useMemo(() => {
@@ -198,8 +232,8 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   };
 
   const selectedItemsList = useMemo(() => {
-    return catalog.filter(i => selectedCodes.has(i.cod_arti));
-  }, [catalog, selectedCodes]);
+    return warehouseItems.filter(i => selectedCodes.has(i.cod_arti));
+  }, [warehouseItems, selectedCodes]);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -215,7 +249,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
             Catálogo Maestro & Control de Stock
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5">
-            {catalog.length.toLocaleString()} artículos registrados en base de datos local
+            {catalog.length.toLocaleString()} artículos registrados en total en el sistema
           </p>
         </div>
 
@@ -226,10 +260,10 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
               const count = forceSyncAllCatalogToPhones();
               onShowToast('success', 'Sincronización enviada', 'Transmitiendo todas las fotos y cambios a los teléfonos.');
             }}
-            className="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+            className="px-3.5 py-2.5 bg-neutral-800 hover:bg-neutral-900 active:scale-98 text-white text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center gap-1.5"
             title="Enviar todas las fotos y cambios a los teléfonos de los técnicos"
           >
-            <span>📡 Sincronizar Teléfonos</span>
+            <span>Sincronizar Teléfonos</span>
           </button>
 
           <button
@@ -246,6 +280,42 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
             )}
           </button>
         </div>
+      </div>
+
+      {/* Warehouse Sub-pages / Tabs */}
+      <div className="flex items-center gap-2 border-b border-neutral-200 overflow-x-auto scrollbar-none">
+        {WAREHOUSES.map((wh) => {
+          const isSelected = selectedWarehouse === wh.id;
+          const count = warehouseCounts[wh.id] || 0;
+          return (
+            <button
+              key={wh.id}
+              type="button"
+              onClick={() => {
+                setSelectedWarehouse(wh.id);
+                setCurrentPage(1);
+                setSelectedCodes(new Set());
+                setSelectedFamily('ALL');
+                setSelectedLocation('ALL');
+              }}
+              className={`px-4 py-3 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-2 -mb-[2px] cursor-pointer rounded-t-lg whitespace-nowrap ${
+                isSelected
+                  ? 'border-neutral-900 text-neutral-900 bg-white shadow-xs'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100/60'
+              }`}
+            >
+              <Package className={`w-4 h-4 ${isSelected ? 'text-neutral-900' : 'text-neutral-400'}`} />
+              <span>{wh.name}</span>
+              <span
+                className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold ${
+                  isSelected ? 'bg-neutral-900 text-white' : 'bg-neutral-200/80 text-neutral-700'
+                }`}
+              >
+                {count.toLocaleString()}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Filter Toolbar Card */}
@@ -604,7 +674,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
         isOpen={exportModalOpen}
         onClose={() => setExportModalOpen(false)}
         filteredItems={filteredItems}
-        allItems={catalog}
+        allItems={warehouseItems}
         selectedItems={selectedItemsList}
         onShowToast={onShowToast}
       />

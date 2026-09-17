@@ -67,7 +67,8 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
   if (localCatalog) {
     try {
       const parsed: CatalogItem[] = JSON.parse(localCatalog);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      // Ensure local catalog contains all warehouses (if older version had only Alm 1, reload)
+      if (Array.isArray(parsed) && parsed.length > 4400) {
         baseData = parsed;
       }
     } catch (e) {
@@ -75,16 +76,41 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
     }
   }
 
-  // Fallback: Load from /catalogo.json
+  // Load from /catalogo.json, /catalogo_alm2.json, and /catalogo_alm3.json
   if (baseData.length === 0) {
     try {
-      const res = await fetch('/catalogo.json');
-      if (!res.ok) {
-        throw new Error(`Failed to load catalogo.json: ${res.statusText}`);
+      const [res1, res2, res3] = await Promise.allSettled([
+        fetch('/catalogo.json'),
+        fetch('/catalogo_alm2.json'),
+        fetch('/catalogo_alm3.json')
+      ]);
+
+      let cat1: CatalogItem[] = [];
+      let cat2: CatalogItem[] = [];
+      let cat3: CatalogItem[] = [];
+
+      if (res1.status === 'fulfilled' && res1.value.ok) {
+        cat1 = (await res1.value.json()).map((i: any) => ({
+          ...i,
+          almacen: i.almacen || '01=ALMACEN PRINCIPAL'
+        }));
       }
-      baseData = await res.json();
+      if (res2.status === 'fulfilled' && res2.value.ok) {
+        cat2 = (await res2.value.json()).map((i: any) => ({
+          ...i,
+          almacen: i.almacen || '02=ALMACEN DE ACTIVOS FIJOS'
+        }));
+      }
+      if (res3.status === 'fulfilled' && res3.value.ok) {
+        cat3 = (await res3.value.json()).map((i: any) => ({
+          ...i,
+          almacen: i.almacen || '03=ALMACEN TEMPORAL'
+        }));
+      }
+
+      baseData = [...cat1, ...cat2, ...cat3];
     } catch (error) {
-      console.error('Error loading default catalog:', error);
+      console.error('Error loading default catalogs:', error);
       baseData = [];
     }
   }
@@ -92,8 +118,9 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
   // Merge overrides so stock and product edits persist across any refresh or hard reload
   const merged = baseData.map((item) => {
     const code = item.cod_arti.toUpperCase().trim();
-    const itemOverride = itemOverrides[code] || {};
-    const stockOverride = stockOverrides[code];
+    const almCode = item.almacen ? `${item.almacen}_${code}` : code;
+    const itemOverride = itemOverrides[almCode] || itemOverrides[code] || {};
+    const stockOverride = stockOverrides[almCode] !== undefined ? stockOverrides[almCode] : stockOverrides[code];
     let f = itemOverride.foto || item.foto;
     if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
@@ -123,7 +150,14 @@ export const setCatalogData = (items: CatalogItem[]) => {
   catalogData = sanitized;
   catalogMap.clear();
   for (const item of sanitized) {
-    catalogMap.set(item.cod_arti.toUpperCase().trim(), item);
+    const code = item.cod_arti.toUpperCase().trim();
+    const alm = (item.almacen || '').toUpperCase().trim();
+    if (!catalogMap.has(code)) {
+      catalogMap.set(code, item);
+    }
+    if (alm) {
+      catalogMap.set(`${alm}_${code}`, item);
+    }
   }
 
   // Initialize Fuse for Fuzzy Search on catalog
