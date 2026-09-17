@@ -23,7 +23,7 @@ import {
   Clock
 } from 'lucide-react';
 import { CatalogItem } from '../types';
-import { searchCatalogFuzzy, getCatalogData, initCatalog, isItemHidden } from '../services/catalogService';
+import { searchCatalogFuzzy, getCatalogData, initCatalog, isItemHidden, getItemKey } from '../services/catalogService';
 import { getAliases } from '../services/aliasService';
 import { getProductImageUrl } from '../services/imageHelper';
 import { 
@@ -204,11 +204,13 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
   ];
 
   const isSameItem = (a: CatalogItem, b: CatalogItem) => {
-    return a.cod_arti === b.cod_arti && (a.almacen || '') === (b.almacen || '') && a.descripcion === b.descripcion;
+    const idA = a.internal_id || getItemKey(a.cod_arti, a.almacen);
+    const idB = b.internal_id || getItemKey(b.cod_arti, b.almacen);
+    return idA === idB;
   };
 
   const getItemCartKey = (item: CatalogItem) => {
-    return `${item.almacen || '01'}_${item.cod_arti}_${item.descripcion}`;
+    return item.internal_id || getItemKey(item.cod_arti, item.almacen);
   };
 
   // The technician ordering portal consolidates all materials, tools and equipment
@@ -733,10 +735,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
       {/* Slide-Up Cart Sheet Modal */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
+          <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl h-[88dvh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
             {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950">
+            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950 shrink-0">
               <div className="flex items-center gap-2.5">
                 <ShoppingBag className="w-5 h-5 text-neutral-300" />
                 <h3 className="font-bold text-base text-white">
@@ -758,7 +760,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
             {/* Modal Body */}
             {submittedOrder ? (
               /* SUCCESS STATE */
-              <div className="p-6 sm:p-8 text-center space-y-5">
+              <div className="flex-1 overflow-y-auto overscroll-contain p-6 sm:p-8 text-center space-y-5" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                 <div className="w-16 h-16 rounded-2xl bg-neutral-800 text-white border border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
                   <CheckCircle2 className="w-8 h-8 text-neutral-200" />
                 </div>
@@ -821,7 +823,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               /* REGULAR CART FLOW */
               <>
                 {/* Modal Scrollable Items List */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+                <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
                   {/* Formulario de Datos: Técnico, OT, Sede */}
                   <div className="p-4 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-3">
                     {/* Nombre del Técnico */}
@@ -1032,10 +1034,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
       {/* Order History Slide-Up / Modal */}
       {isHistoryOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 overscroll-contain">
+          <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl h-[88dvh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
             {/* Header */}
-            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950">
+            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950 shrink-0">
               <div className="flex items-center gap-2.5">
                 <Clock className="w-5 h-5 text-neutral-300" />
                 <h3 className="font-bold text-base text-white">
@@ -1052,7 +1054,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3.5" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
               {myOrders.length === 0 ? (
                 <div className="py-12 text-center space-y-3">
                   <div className="w-12 h-12 rounded-2xl bg-neutral-800/80 border border-neutral-700/60 mx-auto flex items-center justify-center text-neutral-400">
@@ -1139,9 +1141,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                         <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
                           Materiales solicitados:
                         </span>
-                        <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                        <div className="space-y-1">
                           {order.items.map((it, idx) => (
-                            <div key={idx} className="flex items-center justify-between text-neutral-300 py-0.5 border-b border-neutral-800/40 last:border-0">
+                            <div key={idx} className="flex items-center justify-between text-neutral-300 py-0.5 border-b border-neutral-800/40 last:border-0 text-xs">
                               <span className="truncate pr-2">{it.descripcion}</span>
                               <span className="font-mono font-bold text-white shrink-0">
                                 {it.quantity} {it.unidad || 'UND'}
@@ -1157,7 +1159,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-neutral-950 border-t border-neutral-800">
+            <div className="p-4 bg-neutral-950 border-t border-neutral-800 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsHistoryOpen(false)}

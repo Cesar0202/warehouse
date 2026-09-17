@@ -13,11 +13,37 @@ const HIDDEN_ITEMS_KEY = 'app_hidden_items_v1';
 
 // Default hidden items: all other cintas aislantes except CIN01
 const DEFAULT_HIDDEN_KEYS = [
+  'ALM01_CIN08',
+  'ALM01_CIN20',
+  'ALM01_CIN21',
+  'ALM02_CIN06',
   '01=ALMACEN PRINCIPAL__CIN08',
   '01=ALMACEN PRINCIPAL__CIN20',
   '01=ALMACEN PRINCIPAL__CIN21',
   '02=ALMACEN DE ACTIVOS FIJOS__CIN06'
 ];
+
+export const getWarehouseCode = (alm?: string): string => {
+  if (!alm) return 'ALM01';
+  const a = alm.trim().toUpperCase();
+  if (a.includes('02') || a.includes('ACTIVO')) return 'ALM02';
+  if (a.includes('03') || a.includes('TEMPORAL')) return 'ALM03';
+  return 'ALM01';
+};
+
+export const normalizeWarehouseName = (alm?: string): string => {
+  if (!alm) return '01=ALMACEN PRINCIPAL';
+  const a = alm.trim();
+  if (a.startsWith('02') || a.toUpperCase().includes('ACTIVO')) return '02=ALMACEN DE ACTIVOS FIJOS';
+  if (a.startsWith('03') || a.toUpperCase().includes('TEMPORAL')) return '03=ALMACEN TEMPORAL';
+  return '01=ALMACEN PRINCIPAL';
+};
+
+export const getItemKey = (codArti: string, almacen?: string): string => {
+  const normCode = (codArti || '').toUpperCase().trim();
+  const wh = getWarehouseCode(almacen);
+  return `${wh}_${normCode}`;
+};
 
 export const getHiddenItemKeys = (): Set<string> => {
   try {
@@ -37,17 +63,19 @@ export const isItemHidden = (codArti: string, almacen?: string): boolean => {
   const keys = getHiddenItemKeys();
   const normCode = (codArti || '').toUpperCase().trim();
   const key = getItemKey(codArti, almacen);
-  return keys.has(key) || keys.has(normCode);
+  const legacyKey = `${normalizeWarehouseName(almacen).toUpperCase()}__${normCode}`;
+  return keys.has(key) || keys.has(legacyKey);
 };
 
 export const toggleProductHidden = (codArti: string, almacen?: string): boolean => {
   const key = getItemKey(codArti, almacen);
   const normCode = (codArti || '').toUpperCase().trim();
+  const legacyKey = `${normalizeWarehouseName(almacen).toUpperCase()}__${normCode}`;
   const set = getHiddenItemKeys();
   let isNowHidden = false;
-  if (set.has(key) || set.has(normCode)) {
+  if (set.has(key) || set.has(legacyKey)) {
     set.delete(key);
-    set.delete(normCode);
+    set.delete(legacyKey);
     isNowHidden = false;
   } else {
     set.add(key);
@@ -57,31 +85,15 @@ export const toggleProductHidden = (codArti: string, almacen?: string): boolean 
   localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(arr));
   broadcastToggleHiddenItem(key, isNowHidden, arr);
 
-  const alm = normalizeWarehouseName(almacen);
   const updatedItems = catalogData.map(item => {
-    const itemCode = item.cod_arti.toUpperCase().trim();
-    const itemAlm = normalizeWarehouseName(item.almacen);
-    if (itemCode === normCode && itemAlm === alm) {
+    const itemKey = getItemKey(item.cod_arti, item.almacen);
+    if (itemKey === key) {
       return { ...item, oculto: isNowHidden };
     }
     return item;
   });
   setCatalogData(updatedItems);
   return isNowHidden;
-};
-
-export const normalizeWarehouseName = (alm?: string): string => {
-  if (!alm) return '01=ALMACEN PRINCIPAL';
-  const a = alm.trim();
-  if (a.startsWith('02')) return '02=ALMACEN DE ACTIVOS FIJOS';
-  if (a.startsWith('03')) return '03=ALMACEN TEMPORAL';
-  return '01=ALMACEN PRINCIPAL';
-};
-
-export const getItemKey = (codArti: string, almacen?: string): string => {
-  const normCode = (codArti || '').toUpperCase().trim();
-  const alm = normalizeWarehouseName(almacen).toUpperCase();
-  return `${alm}__${normCode}`;
 };
 
 export const getStockOverrides = (): Record<string, number> => {
@@ -237,8 +249,9 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
 
   const merged = baseData.map((item) => {
     const key = getItemKey(item.cod_arti, item.almacen);
-    const itemOverride = itemOverrides[key] || {};
-    const stockOverride = stockOverrides[key];
+    const legacyKey = `${normalizeWarehouseName(item.almacen).toUpperCase()}__${item.cod_arti.toUpperCase().trim()}`;
+    const itemOverride = itemOverrides[key] || itemOverrides[legacyKey] || {};
+    const stockOverride = stockOverrides[key] ?? stockOverrides[legacyKey];
     let f = itemOverride.foto || item.foto;
     if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
@@ -246,6 +259,7 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
 
     return {
       ...item,
+      internal_id: key,
       ...itemOverride,
       foto: f,
       oculto: isItemHidden(item.cod_arti, item.almacen),
@@ -263,8 +277,10 @@ export const setCatalogData = (items: CatalogItem[]) => {
     if (f && (f.startsWith('data:image/svg') || f.includes('unsplash.com'))) {
       f = undefined;
     }
+    const internalId = getItemKey(item.cod_arti, item.almacen);
     return { 
       ...item, 
+      internal_id: internalId,
       almacen: normalizeWarehouseName(item.almacen),
       oculto: isItemHidden(item.cod_arti, item.almacen),
       foto: f, 

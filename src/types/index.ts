@@ -1,4 +1,5 @@
 export interface CatalogItem {
+  internal_id?: string; // e.g. ALM01_CIN01, ALM02_EXT15 (unique per warehouse and product)
   cod_arti: string;
   descripcion: string;
   familia: string;
