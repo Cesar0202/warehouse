@@ -23,7 +23,7 @@ import {
   Clock
 } from 'lucide-react';
 import { CatalogItem } from '../types';
-import { searchCatalogFuzzy, getCatalogData, initCatalog } from '../services/catalogService';
+import { searchCatalogFuzzy, getCatalogData, initCatalog, isItemHidden } from '../services/catalogService';
 import { getAliases } from '../services/aliasService';
 import { getProductImageUrl } from '../services/imageHelper';
 import { 
@@ -221,6 +221,11 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     current.forEach((item) => {
       const key = item.cod_arti.toUpperCase().trim();
       const desc = item.descripcion.toUpperCase().trim();
+
+      // Exclude hidden products
+      if (item.oculto || isItemHidden(item.cod_arti, item.almacen)) {
+        return;
+      }
 
       // Exclude other cinta aislante codes (strictly CIN01 for cinta aislante)
       if (key !== 'CIN01' && desc.includes('CINTA AISLANTE')) {

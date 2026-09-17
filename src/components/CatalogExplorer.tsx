@@ -13,10 +13,12 @@ import {
   Minus,
   ArrowUpDown,
   Check,
-  Package
+  Package,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { CatalogItem } from '../types';
-import { searchCatalogFuzzy, updateProductStock, getCatalogData } from '../services/catalogService';
+import { searchCatalogFuzzy, updateProductStock, getCatalogData, toggleProductHidden, isItemHidden } from '../services/catalogService';
 import { getProductImageUrl, DEFAULT_PRODUCT_IMAGE } from '../services/imageHelper';
 import { forceSyncAllCatalogToPhones } from '../services/technicianOrderService';
 import { CustomExportModal } from './CustomExportModal';
@@ -52,6 +54,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
   const [selectedFamily, setSelectedFamily] = useState('ALL');
   const [selectedLocation, setSelectedLocation] = useState('ALL');
   const [stockFilter, setStockFilter] = useState<'ALL' | 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK'>('ALL');
+  const [visibilityFilter, setVisibilityFilter] = useState<'ALL' | 'VISIBLE' | 'HIDDEN'>('ALL');
   
   // Sorting
   const [sortField, setSortField] = useState<SortField>('cod_arti');
@@ -172,6 +175,12 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
       list = list.filter(item => item.stock > 0 && item.stock <= 5);
     }
 
+    if (visibilityFilter === 'VISIBLE') {
+      list = list.filter(item => !item.oculto && !isItemHidden(item.cod_arti, item.almacen));
+    } else if (visibilityFilter === 'HIDDEN') {
+      list = list.filter(item => item.oculto || isItemHidden(item.cod_arti, item.almacen));
+    }
+
     // Sort: if searching, maintain search relevance score unless user clicked a sort header
     if (!searchTerm.trim()) {
       list.sort((a, b) => {
@@ -210,7 +219,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
     }
 
     return list;
-  }, [warehouseItems, searchTerm, selectedFamily, selectedLocation, stockFilter, sortField, sortOrder, hasUserSorted]);
+  }, [warehouseItems, searchTerm, selectedFamily, selectedLocation, stockFilter, visibilityFilter, sortField, sortOrder, hasUserSorted]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const paginatedItems = useMemo(() => {
@@ -234,6 +243,18 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
     if (updated && onCatalogUpdated) {
       onCatalogUpdated([...getCatalogData()]);
     }
+  };
+
+  const handleToggleHide = (item: CatalogItem) => {
+    const isNowHidden = toggleProductHidden(item.cod_arti, item.almacen);
+    if (onCatalogUpdated) {
+      onCatalogUpdated([...getCatalogData()]);
+    }
+    onShowToast(
+      isNowHidden ? 'warning' : 'success',
+      isNowHidden ? 'Producto ocultado para técnicos' : 'Producto visible para técnicos',
+      `[${item.cod_arti}] ${item.descripcion}`
+    );
   };
 
   const toggleSelectRow = (codArti: string) => {
@@ -413,6 +434,22 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
               <option value="OUT_OF_STOCK">Agotados (0)</option>
             </select>
           </div>
+
+          {/* Visibility Filter */}
+          <div className="sm:col-span-2">
+            <select
+              value={visibilityFilter}
+              onChange={(e) => {
+                setVisibilityFilter(e.target.value as any);
+                setCurrentPage(1);
+              }}
+              className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-neutral-900 text-xs focus:bg-white focus:border-neutral-900 outline-none transition-all"
+            >
+              <option value="ALL">Todos los estados</option>
+              <option value="VISIBLE">Solo Visibles</option>
+              <option value="HIDDEN">Solo Ocultos (Técnicos)</option>
+            </select>
+          </div>
         </div>
 
         {/* Filter Summary & Selection Stats */}
@@ -511,12 +548,13 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
             <tbody className="divide-y divide-neutral-200 font-sans">
               {paginatedItems.map((item) => {
                 const isSelected = selectedCodes.has(item.cod_arti);
+                const isHidden = item.oculto || isItemHidden(item.cod_arti, item.almacen);
                 return (
                   <tr
-                    key={item.cod_arti}
+                    key={item.almacen ? `${item.almacen}_${item.cod_arti}` : item.cod_arti}
                     className={`hover:bg-neutral-50 transition-colors ${
                       isSelected ? 'bg-neutral-100/70' : ''
-                    }`}
+                    } ${isHidden ? 'bg-neutral-50/50 opacity-80' : ''}`}
                   >
                     {/* Checkbox */}
                     <td className="p-3 text-center">
@@ -534,14 +572,14 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenDetailDrawer(item)}
-                          className="font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-neutral-100 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors border border-neutral-300"
+                          className="font-mono font-bold text-xs px-2.5 py-0.5 rounded bg-neutral-100 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors border border-neutral-300 cursor-pointer"
                         >
                           {item.cod_arti}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleCopy(item.cod_arti, 'Código')}
-                          className="text-neutral-400 hover:text-neutral-900 p-1 rounded transition-colors"
+                          className="text-neutral-400 hover:text-neutral-900 p-1 rounded transition-colors cursor-pointer"
                           title="Copiar código"
                         >
                           <Copy className="w-3.5 h-3.5" />
@@ -570,12 +608,22 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                           );
                         })()}
                         <div className="min-w-0">
-                          <p 
-                            onClick={() => onOpenDetailDrawer(item)}
-                            className="font-semibold text-neutral-900 cursor-pointer hover:underline leading-snug truncate max-w-md"
-                          >
-                            {item.descripcion}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p 
+                              onClick={() => onOpenDetailDrawer(item)}
+                              className={`font-semibold cursor-pointer hover:underline leading-snug truncate max-w-md ${
+                                isHidden ? 'text-neutral-600' : 'text-neutral-900'
+                              }`}
+                            >
+                              {item.descripcion}
+                            </p>
+                            {isHidden && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 shrink-0 inline-flex items-center gap-1">
+                                <EyeOff className="w-3 h-3" />
+                                <span>Oculto</span>
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2 text-[11px] text-neutral-500 mt-0.5 font-mono">
                             <span>Unidad: {item.unidad || 'UND'}</span>
                           </div>
@@ -597,7 +645,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                           type="button"
                           onClick={() => handleQuickStockChange(item.cod_arti, -1, item.stock, item.almacen)}
                           disabled={item.stock <= 0}
-                          className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-30"
+                          className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-30 cursor-pointer"
                           title="Disminuir 1"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -606,7 +654,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenEditModal(item)}
-                          className={`px-3 py-0.5 rounded font-mono font-bold text-xs border min-w-[54px] text-center transition-all ${
+                          className={`px-3 py-0.5 rounded font-mono font-bold text-xs border min-w-[54px] text-center transition-all cursor-pointer ${
                             item.stock > 0
                               ? 'bg-neutral-100 text-neutral-900 border-neutral-300 hover:bg-neutral-200'
                               : 'bg-white text-neutral-400 border-neutral-200 line-through hover:bg-neutral-50'
@@ -619,7 +667,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                         <button
                           type="button"
                           onClick={() => handleQuickStockChange(item.cod_arti, 1, item.stock, item.almacen)}
-                          className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center text-xs font-bold transition-all"
+                          className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center text-xs font-bold transition-all cursor-pointer"
                           title="Aumentar 1"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -641,10 +689,28 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                     {/* Actions */}
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {/* Toggle Hide/Show Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHide(item)}
+                          className={`p-1.5 rounded transition-colors cursor-pointer border ${
+                            isHidden
+                              ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
+                              : 'text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 border-transparent hover:border-neutral-200'
+                          }`}
+                          title={
+                            isHidden
+                              ? 'Producto OCULTO para técnicos (Clic para hacer visible)'
+                              : 'Ocultar producto para técnicos'
+                          }
+                        >
+                          {isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => onOpenEditModal(item)}
-                          className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition-colors"
+                          className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                           title="Editar producto"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -652,7 +718,7 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenAliasModalForCatalogItem(item)}
-                          className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition-colors"
+                          className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded transition-colors cursor-pointer"
                           title="Agregar alias a este producto"
                         >
                           <BookmarkPlus className="w-4 h-4" />

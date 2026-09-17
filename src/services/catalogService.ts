@@ -9,6 +9,61 @@ let catalogFuse: Fuse<CatalogItem> | null = null;
 
 const STOCK_OVERRIDES_KEY = 'app_stock_overrides_v2';
 const CUSTOM_OVERRIDES_KEY = 'app_item_overrides_v2';
+const HIDDEN_ITEMS_KEY = 'app_hidden_items_v1';
+
+// Default hidden items: all other cintas aislantes except CIN01
+const DEFAULT_HIDDEN_KEYS = [
+  '01=ALMACEN PRINCIPAL__CIN08',
+  '01=ALMACEN PRINCIPAL__CIN20',
+  '01=ALMACEN PRINCIPAL__CIN21',
+  '02=ALMACEN DE ACTIVOS FIJOS__CIN06'
+];
+
+export const getHiddenItemKeys = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(HIDDEN_ITEMS_KEY);
+    if (!raw) {
+      const initial = new Set(DEFAULT_HIDDEN_KEYS);
+      localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(Array.from(initial)));
+      return initial;
+    }
+    return new Set(JSON.parse(raw));
+  } catch {
+    return new Set(DEFAULT_HIDDEN_KEYS);
+  }
+};
+
+export const isItemHidden = (codArti: string, almacen?: string): boolean => {
+  const key = getItemKey(codArti, almacen);
+  return getHiddenItemKeys().has(key);
+};
+
+export const toggleProductHidden = (codArti: string, almacen?: string): boolean => {
+  const key = getItemKey(codArti, almacen);
+  const set = getHiddenItemKeys();
+  let isNowHidden = false;
+  if (set.has(key)) {
+    set.delete(key);
+    isNowHidden = false;
+  } else {
+    set.add(key);
+    isNowHidden = true;
+  }
+  localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(Array.from(set)));
+
+  const normCode = (codArti || '').toUpperCase().trim();
+  const alm = normalizeWarehouseName(almacen);
+  const updatedItems = catalogData.map(item => {
+    const itemCode = item.cod_arti.toUpperCase().trim();
+    const itemAlm = normalizeWarehouseName(item.almacen);
+    if (itemCode === normCode && itemAlm === alm) {
+      return { ...item, oculto: isNowHidden };
+    }
+    return item;
+  });
+  setCatalogData(updatedItems);
+  return isNowHidden;
+};
 
 export const normalizeWarehouseName = (alm?: string): string => {
   if (!alm) return '01=ALMACEN PRINCIPAL';
@@ -133,6 +188,7 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
       ...item,
       ...itemOverride,
       foto: f,
+      oculto: isItemHidden(item.cod_arti, item.almacen),
       stock: typeof stockOverride === 'number' ? stockOverride : (typeof itemOverride.stock === 'number' ? itemOverride.stock : item.stock)
     };
   });
@@ -150,6 +206,7 @@ export const setCatalogData = (items: CatalogItem[]) => {
     return { 
       ...item, 
       almacen: normalizeWarehouseName(item.almacen),
+      oculto: isItemHidden(item.cod_arti, item.almacen),
       foto: f, 
       imagen: undefined, 
       image_url: undefined 

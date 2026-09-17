@@ -9,6 +9,7 @@ export interface CatalogItem {
   foto?: string;
   imagen?: string;
   image_url?: string;
+  oculto?: boolean;
 }
 
 export interface AliasItem {
