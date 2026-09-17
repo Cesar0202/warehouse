@@ -19,13 +19,20 @@ import {
   Download,
   Share2,
   FileText,
-  MapPin
+  MapPin,
+  Clock
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, getCatalogData, initCatalog } from '../services/catalogService';
 import { getAliases } from '../services/aliasService';
 import { getProductImageUrl } from '../services/imageHelper';
-import { createTechnicianOrder, TechnicianOrder, CATALOG_SYNC_EVENT } from '../services/technicianOrderService';
+import { 
+  createTechnicianOrder, 
+  TechnicianOrder, 
+  CATALOG_SYNC_EVENT, 
+  getTechnicianOrders, 
+  TECHNICIAN_ORDERS_EVENT 
+} from '../services/technicianOrderService';
 
 interface TechnicianOrderViewProps {
   catalog?: CatalogItem[];
@@ -96,6 +103,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyOrders, setHistoryOrders] = useState<TechnicianOrder[]>(() => getTechnicianOrders());
   const [workOrder, setWorkOrder] = useState('');
   const [destination, setDestination] = useState(() => localStorage.getItem(TECH_SEDE_STORAGE) || '');
   const [submittedOrder, setSubmittedOrder] = useState<TechnicianOrder | null>(null);
@@ -143,13 +152,41 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
       });
     };
 
+    const handleOrdersUpdate = () => {
+      setHistoryOrders(getTechnicianOrders());
+    };
+
     window.addEventListener(CATALOG_SYNC_EVENT, handleCatalogSync);
-    window.addEventListener('storage', handleCatalogSync);
+    window.addEventListener(TECHNICIAN_ORDERS_EVENT, handleOrdersUpdate);
+    window.addEventListener('storage', handleOrdersUpdate);
     return () => {
       window.removeEventListener(CATALOG_SYNC_EVENT, handleCatalogSync);
-      window.removeEventListener('storage', handleCatalogSync);
+      window.removeEventListener(TECHNICIAN_ORDERS_EVENT, handleOrdersUpdate);
+      window.removeEventListener('storage', handleOrdersUpdate);
     };
   }, []);
+
+  const myOrders = useMemo(() => {
+    return [...historyOrders].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [historyOrders]);
+
+  // Map of colloquial names / aliases per product code (displays 2-3 most used)
+  const productAliasesMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    const allAliases = getAliases();
+    allAliases.forEach((a) => {
+      const code = a.cod_arti.toUpperCase().trim();
+      if (!map.has(code)) map.set(code, []);
+      const list = map.get(code)!;
+      const clean = a.alias.trim();
+      if (!list.includes(clean) && clean.length <= 25) {
+        list.push(clean);
+      }
+    });
+    return map;
+  }, [internalCatalog]);
 
   useEffect(() => {
     localStorage.setItem(CART_STORAGE, JSON.stringify(cart));
@@ -413,9 +450,24 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               </div>
             </div>
 
-            {/* Install App Button */}
-            {!isStandalone && (
-              <div className="flex items-center gap-2">
+            {/* Header Actions: Mis Pedidos & Install App */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsHistoryOpen(true)}
+                className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                title="Ver mi historial de pedidos"
+              >
+                <Clock className="w-4 h-4 text-neutral-400" />
+                <span>Mis Pedidos</span>
+                {myOrders.length > 0 && (
+                  <span className="px-1.5 py-0.2 bg-white text-black rounded-full font-mono text-[10px] font-bold">
+                    {myOrders.length}
+                  </span>
+                )}
+              </button>
+
+              {!isStandalone && (
                 <button
                   type="button"
                   onClick={handleInstallClick}
@@ -425,8 +477,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   <Smartphone className="w-4 h-4 text-neutral-400" />
                   <span>Instalar App</span>
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Search Input */}
@@ -549,6 +601,24 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                       <h3 className="text-sm font-semibold text-white leading-snug line-clamp-2">
                         {item.descripcion}
                       </h3>
+
+                      {/* Colloquial Name Badges (up to 2 or 3) */}
+                      {(() => {
+                        const aliases = (productAliasesMap.get(item.cod_arti.toUpperCase().trim()) || []).slice(0, 3);
+                        if (aliases.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {aliases.map((al, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-800 text-neutral-300 border border-neutral-700/70"
+                              >
+                                {al}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Action Controls */}
@@ -914,6 +984,146 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
             >
               Entendido
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Order History Slide-Up / Modal */}
+      {isHistoryOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="w-full max-w-lg bg-neutral-900 border border-neutral-800 rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950">
+              <div className="flex items-center gap-2.5">
+                <Clock className="w-5 h-5 text-neutral-300" />
+                <h3 className="font-bold text-base text-white">
+                  Historial de Pedidos ({myOrders.length})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHistoryOpen(false)}
+                className="p-1.5 text-neutral-400 hover:text-white rounded-lg bg-neutral-800 hover:bg-neutral-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
+              {myOrders.length === 0 ? (
+                <div className="py-12 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-neutral-800/80 border border-neutral-700/60 mx-auto flex items-center justify-center text-neutral-400">
+                    <ShoppingBag className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-white">No tienes pedidos registrados</p>
+                  <p className="text-xs text-neutral-400 max-w-xs mx-auto">
+                    Tus solicitudes enviadas aparecerán aquí para que puedas consultar su estado y materiales.
+                  </p>
+                </div>
+              ) : (
+                myOrders.map((order) => {
+                  const dateStr = new Date(order.createdAt).toLocaleString('es-PE', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  });
+
+                  return (
+                    <div
+                      key={order.id}
+                      className="p-4 bg-neutral-950 rounded-2xl border border-neutral-800/90 space-y-3 shadow-sm"
+                    >
+                      {/* Order Top Bar */}
+                      <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-2.5">
+                        <div>
+                          <span className="font-mono font-bold text-xs text-white bg-neutral-800 px-2 py-0.5 rounded border border-neutral-700">
+                            {order.orderNumber}
+                          </span>
+                          <span className="text-[11px] text-neutral-400 ml-2">
+                            {dateStr}
+                          </span>
+                        </div>
+
+                        {/* Status badge */}
+                        <div>
+                          {order.status === 'attended' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Atendido</span>
+                            </span>
+                          ) : order.status === 'cancelled' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/15 text-red-400 border border-red-500/30">
+                              <X className="w-3 h-3" />
+                              <span>Cancelado</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                              <Clock className="w-3 h-3" />
+                              <span>Pendiente</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Metadata */}
+                      <div className="grid grid-cols-2 gap-2 text-xs text-neutral-400">
+                        {order.workOrder && (
+                          <div>
+                            <span>OT: </span>
+                            <strong className="text-white font-mono">{order.workOrder}</strong>
+                          </div>
+                        )}
+                        {order.destination && (
+                          <div>
+                            <span>Sede: </span>
+                            <strong className="text-white">{order.destination}</strong>
+                          </div>
+                        )}
+                        <div>
+                          <span>Técnico: </span>
+                          <strong className="text-white">{order.technicianName}</strong>
+                        </div>
+                        <div>
+                          <span>Total: </span>
+                          <strong className="text-white">{order.totalItems} art. ({order.totalUnits} unid.)</strong>
+                        </div>
+                      </div>
+
+                      {/* Items List inside Order */}
+                      <div className="bg-neutral-900/80 rounded-xl p-2.5 border border-neutral-800/80 space-y-1.5 text-xs">
+                        <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block">
+                          Materiales solicitados:
+                        </span>
+                        <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                          {order.items.map((it, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-neutral-300 py-0.5 border-b border-neutral-800/40 last:border-0">
+                              <span className="truncate pr-2">{it.descripcion}</span>
+                              <span className="font-mono font-bold text-white shrink-0">
+                                {it.quantity} {it.unidad || 'UND'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-neutral-950 border-t border-neutral-800">
+              <button
+                type="button"
+                onClick={() => setIsHistoryOpen(false)}
+                className="w-full py-3 bg-white hover:bg-neutral-200 text-black font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer"
+              >
+                Cerrar Historial
+              </button>
+            </div>
           </div>
         </div>
       )}
