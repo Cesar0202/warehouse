@@ -7,6 +7,7 @@ export interface TechnicianOrderItem {
   unidad: string;
   quantity: number;
   ubicacion?: string;
+  almacen?: string;
   foto?: string;
 }
 

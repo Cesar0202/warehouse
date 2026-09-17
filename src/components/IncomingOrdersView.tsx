@@ -269,6 +269,11 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                   </td>
                   <td className="border border-black py-1.5 px-2">
                     <span className="font-bold text-xs uppercase">{it.descripcion}</span>
+                    {it.almacen && (
+                      <span className="ml-1 text-[10px] font-mono text-neutral-600">
+                        ({it.almacen.startsWith('02') ? 'Almacén 2 - Activos' : it.almacen.startsWith('03') ? 'Almacén 3 - Temporal' : 'Almacén 1'})
+                      </span>
+                    )}
                   </td>
                   <td className="border border-black py-1.5 px-2 text-center font-mono font-bold text-xs">
                     {it.ubicacion || '-'}
@@ -602,9 +607,24 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                                       </div>
                                     );
                                   })()}
-                                  <span className="font-semibold text-neutral-900 leading-snug">
-                                    {item.descripcion || item.cod_arti}
-                                  </span>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-semibold text-neutral-900 leading-snug">
+                                        {item.descripcion || item.cod_arti}
+                                      </span>
+                                      {item.almacen && (
+                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                          item.almacen.startsWith('02')
+                                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                            : item.almacen.startsWith('03')
+                                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                            : 'bg-neutral-100 text-neutral-700 border border-neutral-200'
+                                        }`}>
+                                          {item.almacen.startsWith('02') ? 'Almacén 2' : item.almacen.startsWith('03') ? 'Almacén 3' : 'Almacén 1'}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
                               </td>
                               <td className="py-2 px-3 text-center font-mono text-[11px] text-neutral-600">

@@ -20,15 +20,19 @@ export const getStockOverrides = (): Record<string, number> => {
   }
 };
 
-export const saveStockOverride = (codArti: string, stock: number) => {
+export const saveStockOverride = (codArti: string, stock: number, almacen?: string) => {
   try {
     const normCode = codArti.toUpperCase().trim();
+    const alm = almacen ? almacen.toUpperCase().trim() : '';
+    const key = alm ? `${alm}_${normCode}` : normCode;
+
     const overrides = getStockOverrides();
-    overrides[normCode] = stock;
+    overrides[key] = stock;
+    if (alm) overrides[normCode] = stock;
     localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(overrides));
     
     const itemOverrides = getItemOverrides();
-    broadcastCatalogItemSync(normCode, itemOverrides[normCode] || {}, stock);
+    broadcastCatalogItemSync(normCode, itemOverrides[key] || itemOverrides[normCode] || {}, stock);
   } catch (e) {
     console.error('Error saving stock override', e);
   }
@@ -43,15 +47,19 @@ export const getItemOverrides = (): Record<string, Partial<CatalogItem>> => {
   }
 };
 
-export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>) => {
+export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>, almacen?: string) => {
   try {
     const normCode = codArti.toUpperCase().trim();
+    const alm = almacen ? almacen.toUpperCase().trim() : '';
+    const key = alm ? `${alm}_${normCode}` : normCode;
+
     const overrides = getItemOverrides();
-    overrides[normCode] = { ...(overrides[normCode] || {}), ...fields };
+    overrides[key] = { ...(overrides[key] || {}), ...fields };
+    if (alm) overrides[normCode] = { ...(overrides[normCode] || {}), ...fields };
     localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(overrides));
     
     const stockOverrides = getStockOverrides();
-    broadcastCatalogItemSync(normCode, overrides[normCode], stockOverrides[normCode]);
+    broadcastCatalogItemSync(normCode, overrides[key] || overrides[normCode], stockOverrides[key] || stockOverrides[normCode]);
   } catch (e) {
     console.error('Error saving item override', e);
   }
@@ -274,41 +282,47 @@ export const searchCatalogFuzzy = (query: string, limit = 50): { item: CatalogIt
 /**
  * Update stock of a specific product
  */
-export const updateProductStock = (codArti: string, newStock: number): boolean => {
+export const updateProductStock = (codArti: string, newStock: number, almacen?: string): boolean => {
   const normCode = codArti.toUpperCase().trim();
-  const existing = catalogMap.get(normCode);
-  if (!existing) return false;
+  const alm = almacen ? almacen.toUpperCase().trim() : '';
 
   const validStock = Math.max(0, isNaN(newStock) ? 0 : newStock);
-  saveStockOverride(normCode, validStock);
+  saveStockOverride(normCode, validStock, alm);
 
+  let updated = false;
   const updatedItems = catalogData.map(item => {
-    if (item.cod_arti.toUpperCase().trim() === normCode) {
+    const itemCode = item.cod_arti.toUpperCase().trim();
+    const itemAlm = (item.almacen || '').toUpperCase().trim();
+    if (itemCode === normCode && (!alm || itemAlm === alm)) {
+      updated = true;
       return { ...item, stock: validStock };
     }
     return item;
   });
 
-  saveCustomCatalog(updatedItems);
-  return true;
+  if (updated) {
+    saveCustomCatalog(updatedItems);
+  }
+  return updated;
 };
 
 /**
  * Update full details of a specific product
  */
-export const updateProductDetails = (codArti: string, updatedFields: Partial<CatalogItem>): CatalogItem | null => {
+export const updateProductDetails = (codArti: string, updatedFields: Partial<CatalogItem>, almacen?: string): CatalogItem | null => {
   const normCode = codArti.toUpperCase().trim();
-  const existing = catalogMap.get(normCode);
-  if (!existing) return null;
+  const alm = almacen ? almacen.toUpperCase().trim() : '';
 
-  saveItemOverride(normCode, updatedFields);
+  saveItemOverride(normCode, updatedFields, alm);
   if (typeof updatedFields.stock === 'number') {
-    saveStockOverride(normCode, Math.max(0, updatedFields.stock));
+    saveStockOverride(normCode, Math.max(0, updatedFields.stock), alm);
   }
 
   let updatedItem: CatalogItem | null = null;
   const updatedItems = catalogData.map(item => {
-    if (item.cod_arti.toUpperCase().trim() === normCode) {
+    const itemCode = item.cod_arti.toUpperCase().trim();
+    const itemAlm = (item.almacen || '').toUpperCase().trim();
+    if (itemCode === normCode && (!alm || itemAlm === alm)) {
       updatedItem = {
         ...item,
         ...updatedFields,
@@ -331,17 +345,12 @@ export const updateProductDetails = (codArti: string, updatedFields: Partial<Cat
  */
 export const addNewProduct = (item: CatalogItem): boolean => {
   const normCode = item.cod_arti.toUpperCase().trim();
+  const alm = (item.almacen || '').toUpperCase().trim();
   if (!normCode) return false;
 
-  if (catalogMap.has(normCode)) {
-    // Update existing
-    updateProductDetails(normCode, item);
-    return true;
-  }
-
   const validStock = Math.max(0, Number(item.stock) || 0);
-  saveStockOverride(normCode, validStock);
-  saveItemOverride(normCode, item);
+  saveStockOverride(normCode, validStock, alm);
+  saveItemOverride(normCode, item, alm);
 
   const newItem: CatalogItem = {
     ...item,
@@ -357,21 +366,31 @@ export const addNewProduct = (item: CatalogItem): boolean => {
 /**
  * Delete a product from inventory
  */
-export const deleteProduct = (codArti: string): boolean => {
+export const deleteProduct = (codArti: string, almacen?: string): boolean => {
   const normCode = codArti.toUpperCase().trim();
-  if (!catalogMap.has(normCode)) return false;
+  const alm = almacen ? almacen.toUpperCase().trim() : '';
+  const key = alm ? `${alm}_${normCode}` : normCode;
 
   try {
     const stockOverrides = getStockOverrides();
+    delete stockOverrides[key];
     delete stockOverrides[normCode];
     localStorage.setItem(STOCK_OVERRIDES_KEY, JSON.stringify(stockOverrides));
 
     const itemOverrides = getItemOverrides();
+    delete itemOverrides[key];
     delete itemOverrides[normCode];
     localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(itemOverrides));
   } catch {}
 
-  const updatedItems = catalogData.filter(i => i.cod_arti.toUpperCase().trim() !== normCode);
+  const updatedItems = catalogData.filter(i => {
+    const itemCode = i.cod_arti.toUpperCase().trim();
+    const itemAlm = (i.almacen || '').toUpperCase().trim();
+    if (itemCode === normCode && (!alm || itemAlm === alm)) {
+      return false;
+    }
+    return true;
+  });
   saveCustomCatalog(updatedItems);
   return true;
 };

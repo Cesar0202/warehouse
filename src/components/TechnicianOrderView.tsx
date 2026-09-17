@@ -614,6 +614,27 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   {/* Product Info */}
                   <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
                     <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                          item.almacen?.startsWith('02')
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : item.almacen?.startsWith('03')
+                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            : 'bg-neutral-800 text-neutral-300 border border-neutral-700/60'
+                        }`}>
+                          {item.almacen?.startsWith('02') ? 'Almacén 2 (Activos)' : item.almacen?.startsWith('03') ? 'Almacén 3 (Temp)' : 'Almacén 1'}
+                        </span>
+                        {item.stock > 0 ? (
+                          <span className="text-[10px] font-mono text-neutral-400">
+                            • Stock: {item.stock}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-neutral-500 line-through">
+                            • Sin stock
+                          </span>
+                        )}
+                      </div>
+
                       <h3 className="text-sm font-semibold text-white leading-snug line-clamp-2">
                         {item.descripcion}
                       </h3>

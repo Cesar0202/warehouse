@@ -228,9 +228,9 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
     }
   };
 
-  const handleQuickStockChange = (codArti: string, delta: number, currentStock: number) => {
+  const handleQuickStockChange = (codArti: string, delta: number, currentStock: number, almacen?: string) => {
     const nextVal = Math.max(0, parseFloat((currentStock + delta).toFixed(2)));
-    const updated = updateProductStock(codArti, nextVal);
+    const updated = updateProductStock(codArti, nextVal, almacen);
     if (updated && onCatalogUpdated) {
       onCatalogUpdated([...getCatalogData()]);
     }
@@ -595,12 +595,12 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => handleQuickStockChange(item.cod_arti, -1, item.stock)}
+                          onClick={() => handleQuickStockChange(item.cod_arti, -1, item.stock, item.almacen)}
                           disabled={item.stock <= 0}
                           className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center text-xs font-bold transition-all disabled:opacity-30"
                           title="Disminuir 1"
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-3.5 h-3.5" />
                         </button>
 
                         <button
@@ -618,11 +618,11 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => handleQuickStockChange(item.cod_arti, 1, item.stock)}
+                          onClick={() => handleQuickStockChange(item.cod_arti, 1, item.stock, item.almacen)}
                           className="w-6 h-6 rounded bg-neutral-100 hover:bg-neutral-200 active:scale-95 text-neutral-800 flex items-center justify-center text-xs font-bold transition-all"
                           title="Aumentar 1"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>

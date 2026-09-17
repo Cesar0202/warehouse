@@ -104,7 +104,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       ubicacion: ubicacion.trim(),
       stock: parseFloat(String(stock)) || 0,
       foto: foto.trim()
-    });
+    }, product.almacen);
 
     if (updated) {
       onProductUpdated(updated);
