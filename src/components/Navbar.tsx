@@ -48,10 +48,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   type="button"
                   onClick={onSyncToPhones}
-                  className="text-xs font-semibold bg-blue-600 text-white rounded px-2.5 py-1 flex items-center gap-1 shadow-sm"
+                  className="text-xs font-semibold bg-neutral-900 hover:bg-black text-white rounded px-2.5 py-1 flex items-center gap-1 shadow-sm"
                   title="Enviar fotos y stock a todos los teléfonos"
                 >
-                  <span>📡 Sincronizar</span>
+                  <span>Sincronizar</span>
                 </button>
               )}
               {onSwitchToTechnician && (
@@ -60,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={onSwitchToTechnician}
                   className="text-xs font-semibold bg-neutral-900 text-white rounded px-2.5 py-1 flex items-center gap-1 shadow-sm"
                 >
-                  <span>👷 Modo Técnico</span>
+                  <span>Modo Técnico</span>
                 </button>
               )}
               {onLogout && (
@@ -160,7 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="hidden sm:inline-flex px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm items-center gap-1.5 cursor-pointer"
                 title="Sincronizar todas las fotos y cambios con los teléfonos de los técnicos"
               >
-                <span>📡 Sincronizar Teléfonos</span>
+                <span>Sincronizar Teléfonos</span>
               </button>
             )}
 

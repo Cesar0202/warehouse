@@ -367,10 +367,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                 <button
                   type="button"
                   onClick={handleInstallClick}
-                  className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  className="px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                   title="Instalar como App en el teléfono"
                 >
-                  <Smartphone className="w-4 h-4" />
+                  <Smartphone className="w-4 h-4 text-neutral-400" />
                   <span>Instalar App</span>
                 </button>
               </div>
@@ -467,7 +467,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                   key={item.cod_arti}
                   className={`p-4 rounded-2xl border transition-all flex items-center gap-4 ${
                     qtyInCart > 0
-                      ? 'bg-neutral-900 border-emerald-500/80 ring-1 ring-emerald-500/30'
+                      ? 'bg-neutral-900 border-neutral-600 ring-1 ring-white/10'
                       : 'bg-neutral-900/70 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900'
                   }`}
                 >
@@ -518,7 +518,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </button>
-                          <span className="w-6 text-center font-mono font-extrabold text-sm text-emerald-400">
+                          <span className="w-6 text-center font-mono font-bold text-sm text-white">
                             {qtyInCart}
                           </span>
                           <button
@@ -549,17 +549,17 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                 setSubmittedOrder(null);
                 setIsCartOpen(true);
               }}
-              className="w-full py-3.5 px-5 bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-black font-extrabold text-sm rounded-2xl shadow-xl transition-all flex items-center justify-between cursor-pointer"
+              className="w-full py-3.5 px-5 bg-white hover:bg-neutral-200 active:scale-98 text-black font-bold text-sm rounded-2xl shadow-xl transition-all flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center text-xs font-bold font-mono">
                   {cart.length}
                 </div>
-                <span>Ver Mi Pedido ({totalItemsCount} unid.)</span>
+                <span>Ver Pedido ({totalItemsCount} unid.)</span>
               </div>
               <div className="flex items-center gap-1.5 font-bold">
                 <span>Continuar</span>
-                <Send className="w-4 h-4 fill-black" />
+                <Send className="w-4 h-4 fill-current" />
               </div>
             </button>
           </div>
@@ -573,7 +573,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
             {/* Modal Header */}
             <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between bg-neutral-950">
               <div className="flex items-center gap-2.5">
-                <ShoppingBag className="w-5 h-5 text-emerald-400" />
+                <ShoppingBag className="w-5 h-5 text-neutral-300" />
                 <h3 className="font-bold text-base text-white">
                   {submittedOrder ? 'Solicitud Confirmada' : `Resumen de Solicitud (${cart.length} artículos)`}
                 </h3>
@@ -594,16 +594,16 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
             {submittedOrder ? (
               /* SUCCESS STATE */
               <div className="p-6 sm:p-8 text-center space-y-5">
-                <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 mx-auto flex items-center justify-center shadow-lg animate-bounce">
-                  <CheckCircle2 className="w-9 h-9" />
+                <div className="w-16 h-16 rounded-2xl bg-neutral-800 text-white border border-neutral-700 mx-auto flex items-center justify-center shadow-lg">
+                  <CheckCircle2 className="w-8 h-8 text-neutral-200" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="inline-block px-3 py-1 rounded-full text-xs font-mono font-bold bg-neutral-800 text-emerald-400 border border-neutral-700">
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-mono font-bold bg-neutral-800 text-neutral-200 border border-neutral-700">
                     {submittedOrder.orderNumber}
                   </span>
-                  <h4 className="text-xl font-extrabold text-white">
-                    ¡Pedido Enviado al Almacén!
+                  <h4 className="text-xl font-bold text-white">
+                    Pedido Enviado al Almacén
                   </h4>
                   <p className="text-xs text-neutral-400 max-w-sm mx-auto">
                     Tu solicitud ha llegado directamente al panel de pedidos del almacén para su despacho.
@@ -647,7 +647,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                     setSubmittedOrder(null);
                     setIsCartOpen(false);
                   }}
-                  className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-sm rounded-xl shadow-lg transition-all cursor-pointer"
+                  className="w-full py-3.5 bg-white hover:bg-neutral-200 text-black font-bold text-sm rounded-xl shadow-lg transition-all cursor-pointer"
                 >
                   Entendido / Hacer Otro Pedido
                 </button>
@@ -657,77 +657,63 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
               <>
                 {/* Modal Scrollable Items List */}
                 <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-                  {/* Technician Info Box (Obligatorio en formulario) */}
-                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-2">
-                    <label className="flex items-center justify-between text-xs font-bold text-neutral-200">
-                      <span className="flex items-center gap-1.5">
-                        <User className="w-4 h-4 text-blue-400" />
-                        <span>Técnico Responsable</span>
-                        <span className="text-red-400 font-bold">*</span>
-                      </span>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 uppercase tracking-wider">
-                        Obligatorio
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      value={techName}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setTechName(val);
-                        localStorage.setItem(TECH_NAME_STORAGE, val);
-                      }}
-                      placeholder="Escribe tu nombre o código de técnico (ej: Fernando)..."
-                      autoFocus={!techName.trim()}
-                      className={`w-full px-3.5 py-2.5 bg-neutral-900 border rounded-xl text-xs sm:text-sm font-bold text-white placeholder-neutral-500 outline-none transition-all ${
-                        !techName.trim()
-                          ? 'border-amber-500/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
-                          : 'border-neutral-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
-                      }`}
-                    />
-                    {!techName.trim() && (
-                      <p className="text-[11px] text-amber-400 font-medium">
-                        * Ingresa tu nombre para poder enviar el pedido al almacén.
-                      </p>
-                    )}
-                  </div>
+                  {/* Formulario de Datos: Técnico, OT, Sede */}
+                  <div className="p-4 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-3">
+                    {/* Técnico Responsable */}
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
+                        Técnico Responsable <span className="text-red-400 font-bold">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={techName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTechName(val);
+                          localStorage.setItem(TECH_NAME_STORAGE, val);
+                        }}
+                        placeholder="Nombre o código del técnico..."
+                        autoFocus={!techName.trim()}
+                        className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 focus:border-neutral-500 rounded-xl text-xs sm:text-sm font-semibold text-white placeholder-neutral-500 outline-none transition-all"
+                      />
+                    </div>
 
-                  {/* ORDEN DE TRABAJO (OT) */}
-                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-200">
-                      <FileText className="w-4 h-4 text-emerald-400" />
-                      <span>ORDEN DE TRABAJO (OT)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={workOrder}
-                      onChange={(e) => setWorkOrder(e.target.value)}
-                      placeholder="Ej: OT-10492, Mantención Chorrillos..."
-                      className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-xs sm:text-sm font-semibold text-white placeholder-neutral-500 outline-none transition-all"
-                    />
-                  </div>
+                    {/* OT y Sede */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
+                          Orden de Trabajo (OT)
+                        </label>
+                        <input
+                          type="text"
+                          value={workOrder}
+                          onChange={(e) => setWorkOrder(e.target.value)}
+                          placeholder="Ej: OT-10492"
+                          className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 focus:border-neutral-500 rounded-xl text-xs sm:text-sm font-medium text-white placeholder-neutral-500 outline-none transition-all"
+                        />
+                      </div>
 
-                  {/* SEDE / PUNTO DE LLEGADA */}
-                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-200">
-                      <MapPin className="w-4 h-4 text-amber-400" />
-                      <span>SEDE/PUNTO DE LLEGADA</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={destination}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setDestination(val);
-                        localStorage.setItem(TECH_SEDE_STORAGE, val);
-                      }}
-                      placeholder="Ej: Sede Central, Almacén Callao, Piso 3..."
-                      className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-xs sm:text-sm font-semibold text-white placeholder-neutral-500 outline-none transition-all"
-                    />
+                      <div>
+                        <label className="block text-xs font-semibold text-neutral-400 mb-1.5">
+                          Sede / Punto de Llegada
+                        </label>
+                        <input
+                          type="text"
+                          value={destination}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDestination(val);
+                            localStorage.setItem(TECH_SEDE_STORAGE, val);
+                          }}
+                          placeholder="Ej: Sede Central"
+                          className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 focus:border-neutral-500 rounded-xl text-xs sm:text-sm font-medium text-white placeholder-neutral-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Items List */}
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {cart.map((c) => {
                       const imgUrl = getProductImageUrl(c.item);
                       return (
@@ -761,17 +747,17 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                             <button
                               type="button"
                               onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity - 1)}
-                              className="w-6 h-6 rounded bg-neutral-800 text-white flex items-center justify-center text-xs cursor-pointer"
+                              className="w-6 h-6 rounded bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center text-xs cursor-pointer"
                             >
                               <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <span className="w-5 text-center font-mono font-bold text-xs text-emerald-400">
+                            <span className="w-6 text-center font-mono font-bold text-xs text-white">
                               {c.quantity}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleUpdateQuantity(c.item.cod_arti, c.quantity + 1)}
-                              className="w-6 h-6 rounded bg-white text-black font-bold flex items-center justify-center text-xs cursor-pointer"
+                              className="w-6 h-6 rounded bg-white hover:bg-neutral-200 text-black font-bold flex items-center justify-center text-xs cursor-pointer"
                             >
                               <Plus className="w-3.5 h-3.5 stroke-[3]" />
                             </button>
@@ -798,7 +784,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                     type="button"
                     disabled={isSubmitting || cart.length === 0}
                     onClick={handleSendOrderToWarehouse}
-                    className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-98 disabled:opacity-50 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                    className="w-full py-3.5 px-4 bg-white hover:bg-neutral-200 active:scale-98 disabled:opacity-40 text-black font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Package className="w-4 h-4 stroke-[2.5]" />
                     <span>Enviar Pedido al Almacén</span>
@@ -827,7 +813,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl text-neutral-100">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
               <div className="flex items-center gap-2">
-                <Smartphone className="w-5 h-5 text-blue-400" />
+                <Smartphone className="w-5 h-5 text-neutral-200" />
                 <h3 className="font-bold text-base text-white">Instalar App en el Celular</h3>
               </div>
               <button
@@ -845,8 +831,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
             {/* Android Instructions */}
             <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1.5">
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block">
-                📱 En Android (Google Chrome / Brave / Edge)
+              <span className="text-xs font-bold text-neutral-200 uppercase tracking-wider block">
+                En Android (Google Chrome / Brave / Edge)
               </span>
               <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
                 <li>Toca el menú de <strong>3 puntos (⋮)</strong> arriba a la derecha.</li>
@@ -857,11 +843,11 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
             {/* iPhone Instructions */}
             <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1.5">
-              <span className="text-xs font-bold text-blue-400 uppercase tracking-wider block">
-                🍏 En iPhone / iPad (Safari)
+              <span className="text-xs font-bold text-neutral-200 uppercase tracking-wider block">
+                En iPhone / iPad (Safari)
               </span>
               <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
-                <li>Toca el botón <strong>Compartir</strong> (ícono de cuadro con flecha hacia arriba <strong>[↑]</strong>).</li>
+                <li>Toca el botón <strong>Compartir</strong> (ícono [↑]).</li>
                 <li>Desliza hacia abajo y toca <strong>"Agregar a pantalla de inicio"</strong> (+).</li>
                 <li>Toca <strong>"Agregar"</strong> arriba a la derecha.</li>
               </ol>
