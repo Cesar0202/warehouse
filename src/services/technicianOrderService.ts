@@ -35,6 +35,7 @@ export const CATALOG_SYNC_EVENT = 'catalog_sync_updated';
 // MQTT Topics for reliable real-time sync between phones and warehouse
 const MQTT_TOPIC_ORDERS_STATE = 'cesar_wh_orders_v3/state';
 const MQTT_TOPIC_ORDERS_ACTION = 'cesar_wh_orders_v3/action';
+const MQTT_TOPIC_HIDDEN_ITEMS = 'cesar_wh_hidden_items_v3/state';
 const MQTT_TOPIC_ITEM_PREFIX = 'cesar_wh_item_v3/'; // + itemKey
 const MQTT_TOPIC_ITEM_WILDCARD = 'cesar_wh_item_v3/+';
 const MQTT_TOPIC_SYNC_REQ = 'cesar_wh_sync_v3/request';
@@ -135,6 +136,7 @@ export const initRealtimeSync = (): void => {
       console.log('Real-time sync connected to broker:', brokerUrl);
       mqttClient?.subscribe(MQTT_TOPIC_ORDERS_STATE, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_ORDERS_ACTION, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_HIDDEN_ITEMS, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_ITEM_WILDCARD, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_SYNC_REQ, { qos: 1 });
 
@@ -213,7 +215,19 @@ export const initRealtimeSync = (): void => {
           console.warn('Error parsing incoming real-time MQTT orders state:', err);
         }
       }
-      // 3. Individual Item / Photo / Stock Sync
+      // 3. Hidden Items Real-Time Synchronization
+      else if (topic === MQTT_TOPIC_HIDDEN_ITEMS) {
+        try {
+          const incomingHidden: string[] = JSON.parse(payload.toString());
+          if (Array.isArray(incomingHidden)) {
+            localStorage.setItem('app_hidden_items_v1', JSON.stringify(incomingHidden));
+            window.dispatchEvent(new CustomEvent(CATALOG_SYNC_EVENT, { detail: { type: 'HIDDEN_ITEMS', hiddenKeys: incomingHidden } }));
+          }
+        } catch (err) {
+          console.warn('Error parsing incoming hidden items MQTT:', err);
+        }
+      }
+      // 4. Individual Item / Photo / Stock Sync
       else if (topic.startsWith(MQTT_TOPIC_ITEM_PREFIX)) {
         try {
           const data = JSON.parse(payload.toString());
@@ -241,7 +255,7 @@ export const initRealtimeSync = (): void => {
           console.warn('Error parsing single item sync from MQTT:', err);
         }
       }
-      // 4. Sync Request
+      // 5. Sync Request
       else if (topic === MQTT_TOPIC_SYNC_REQ) {
         pushLocalOverridesToRetain();
       }
@@ -262,7 +276,7 @@ const pushLocalOverridesToRetain = () => {
     const stockOverrides = JSON.parse(localStorage.getItem('app_stock_overrides_v2') || '{}');
     const allKeys = Array.from(new Set([...Object.keys(itemOverrides), ...Object.keys(stockOverrides)]));
 
-    if (allKeys.length === 0 || !mqttClient || !mqttClient.connected) return;
+    if (!mqttClient || !mqttClient.connected) return;
 
     allKeys.forEach((key) => {
       const parts = key.split('__');
@@ -277,8 +291,32 @@ const pushLocalOverridesToRetain = () => {
       });
       mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(key), payload, { qos: 1, retain: true });
     });
+
+    const hiddenRaw = localStorage.getItem('app_hidden_items_v1');
+    if (hiddenRaw) {
+      const hiddenKeys = JSON.parse(hiddenRaw);
+      if (Array.isArray(hiddenKeys)) {
+        mqttClient?.publish(MQTT_TOPIC_HIDDEN_ITEMS, JSON.stringify(hiddenKeys), { qos: 1, retain: true });
+      }
+    }
   } catch (e) {
     console.warn('Error pushing local overrides to retain:', e);
+  }
+};
+
+/**
+ * Broadcast hidden items list to all phones in real time via retained MQTT
+ */
+export const broadcastHiddenItems = (hiddenKeys: string[]): void => {
+  if (!mqttClient || !mqttClient.connected) {
+    initRealtimeSync();
+  }
+
+  try {
+    const payload = JSON.stringify(hiddenKeys);
+    mqttClient?.publish(MQTT_TOPIC_HIDDEN_ITEMS, payload, { qos: 1, retain: true });
+  } catch (e) {
+    console.warn('Error broadcasting hidden items:', e);
   }
 };
 

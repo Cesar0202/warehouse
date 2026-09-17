@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import * as XLSX from 'xlsx';
 import { CatalogItem } from '../types';
-import { broadcastCatalogSync, broadcastCatalogItemSync } from './technicianOrderService';
+import { broadcastCatalogSync, broadcastCatalogItemSync, broadcastHiddenItems } from './technicianOrderService';
 
 let catalogData: CatalogItem[] = [];
 let catalogMap = new Map<string, CatalogItem>();
@@ -49,7 +49,9 @@ export const toggleProductHidden = (codArti: string, almacen?: string): boolean 
     set.add(key);
     isNowHidden = true;
   }
-  localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(Array.from(set)));
+  const arr = Array.from(set);
+  localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(arr));
+  broadcastHiddenItems(arr);
 
   const normCode = (codArti || '').toUpperCase().trim();
   const alm = normalizeWarehouseName(almacen);
