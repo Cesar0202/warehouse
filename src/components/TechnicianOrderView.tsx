@@ -549,17 +549,17 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                 setSubmittedOrder(null);
                 setIsCartOpen(true);
               }}
-              className="w-full py-3.5 px-5 bg-white hover:bg-neutral-200 active:scale-98 text-black font-bold text-sm rounded-2xl shadow-xl transition-all flex items-center justify-between cursor-pointer"
+              className="w-full py-3.5 px-5 bg-emerald-500 hover:bg-emerald-400 active:scale-98 text-black font-extrabold text-sm rounded-2xl shadow-xl transition-all flex items-center justify-between cursor-pointer"
             >
               <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center text-xs font-bold font-mono">
+                <div className="w-7 h-7 rounded-lg bg-black text-white flex items-center justify-center text-xs font-bold font-mono">
                   {cart.length}
                 </div>
                 <span>Ver Pedido ({totalItemsCount} unid.)</span>
               </div>
               <div className="flex items-center gap-1.5 font-bold">
                 <span>Continuar</span>
-                <Send className="w-4 h-4 fill-current" />
+                <Send className="w-4 h-4 fill-black" />
               </div>
             </button>
           </div>
