@@ -17,7 +17,9 @@ import {
   FileCheck,
   Smartphone,
   Download,
-  Share2
+  Share2,
+  FileText,
+  MapPin
 } from 'lucide-react';
 import { CatalogItem } from '../types';
 import { searchCatalogFuzzy, getCatalogData, initCatalog } from '../services/catalogService';
@@ -38,6 +40,7 @@ interface CartItem {
 }
 
 const TECH_NAME_STORAGE = 'app_technician_name_v1';
+const TECH_SEDE_STORAGE = 'app_technician_sede_v1';
 const CART_STORAGE = 'app_technician_cart_v1';
 
 export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
@@ -93,6 +96,8 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [workOrder, setWorkOrder] = useState('');
+  const [destination, setDestination] = useState(() => localStorage.getItem(TECH_SEDE_STORAGE) || '');
   const [submittedOrder, setSubmittedOrder] = useState<TechnicianOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -304,9 +309,15 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
     setIsSubmitting(true);
     try {
-      const created = createTechnicianOrder(techName.trim(), cart);
+      const created = createTechnicianOrder(
+        techName.trim(),
+        cart,
+        workOrder.trim(),
+        destination.trim()
+      );
       setSubmittedOrder(created);
       setCart([]);
+      setWorkOrder('');
       onShowToast(
         'success',
         '¡Solicitud enviada al Almacén!',
@@ -604,6 +615,18 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                     <span>Técnico:</span>
                     <strong className="text-white">{submittedOrder.technicianName}</strong>
                   </div>
+                  {submittedOrder.workOrder && (
+                    <div className="flex justify-between text-neutral-400">
+                      <span>OT:</span>
+                      <strong className="text-white">{submittedOrder.workOrder}</strong>
+                    </div>
+                  )}
+                  {submittedOrder.destination && (
+                    <div className="flex justify-between text-neutral-400">
+                      <span>Sede / Llegada:</span>
+                      <strong className="text-white">{submittedOrder.destination}</strong>
+                    </div>
+                  )}
                   <div className="flex justify-between text-neutral-400">
                     <span>Total artículos:</span>
                     <strong className="text-white">
@@ -667,6 +690,40 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                         * Ingresa tu nombre para poder enviar el pedido al almacén.
                       </p>
                     )}
+                  </div>
+
+                  {/* ORDEN DE TRABAJO (OT) */}
+                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-200">
+                      <FileText className="w-4 h-4 text-emerald-400" />
+                      <span>ORDEN DE TRABAJO (OT)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={workOrder}
+                      onChange={(e) => setWorkOrder(e.target.value)}
+                      placeholder="Ej: OT-10492, Mantención Chorrillos..."
+                      className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 rounded-xl text-xs sm:text-sm font-semibold text-white placeholder-neutral-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* SEDE / PUNTO DE LLEGADA */}
+                  <div className="p-3.5 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-neutral-200">
+                      <MapPin className="w-4 h-4 text-amber-400" />
+                      <span>SEDE/PUNTO DE LLEGADA</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={destination}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDestination(val);
+                        localStorage.setItem(TECH_SEDE_STORAGE, val);
+                      }}
+                      placeholder="Ej: Sede Central, Almacén Callao, Piso 3..."
+                      className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 rounded-xl text-xs sm:text-sm font-semibold text-white placeholder-neutral-500 outline-none transition-all"
+                    />
                   </div>
 
                   {/* Items List */}

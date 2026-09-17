@@ -14,6 +14,8 @@ export interface TechnicianOrder {
   id: string;
   orderNumber: string;
   technicianName: string;
+  workOrder?: string;
+  destination?: string;
   createdAt: string; // ISO string
   note?: string;
   items: TechnicianOrderItem[];
@@ -338,6 +340,8 @@ export const forceSyncAllCatalogToPhones = (): number => {
 export const createTechnicianOrder = (
   technicianName: string,
   cartItems: { item: CatalogItem; quantity: number }[],
+  workOrder?: string,
+  destination?: string,
   note?: string
 ): TechnicianOrder => {
   const currentOrders = getTechnicianOrders();
@@ -361,6 +365,8 @@ export const createTechnicianOrder = (
     id: 'order_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
     orderNumber,
     technicianName: technicianName.trim() || 'Técnico de Campo',
+    workOrder: workOrder?.trim() || '',
+    destination: destination?.trim() || '',
     createdAt: date.toISOString(),
     note: note?.trim() || '',
     items,

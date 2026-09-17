@@ -142,6 +142,8 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
     const lines = [
       'SOLICITUD: ' + order.orderNumber,
       'TÉCNICO: ' + order.technicianName,
+      order.workOrder ? 'ORDEN DE TRABAJO (OT): ' + order.workOrder : '',
+      order.destination ? 'SEDE / LLEGADA: ' + order.destination : '',
       'FECHA: ' + new Date(order.createdAt).toLocaleString('es-PE'),
       order.note ? 'NOTA: ' + order.note : '',
       '------------------------------',
@@ -226,6 +228,12 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
               <p className="text-xs font-bold mt-1">
                 TÉCNICO RESPONSABLE:{' '}
                 <span className="underline uppercase">{orderToPrint.technicianName}</span>
+                {orderToPrint.workOrder && (
+                  <span className="ml-2">| OT: <strong className="uppercase">{orderToPrint.workOrder}</strong></span>
+                )}
+                {orderToPrint.destination && (
+                  <span className="ml-2">| SEDE/LLEGADA: <strong className="uppercase">{orderToPrint.destination}</strong></span>
+                )}
               </p>
               {orderToPrint.note && (
                 <p className="text-[11px] italic mt-0.5">Nota: {orderToPrint.note}</p>
@@ -432,6 +440,18 @@ export const IncomingOrdersView: React.FC<IncomingOrdersViewProps> = ({
                       <User className="w-3 h-3 text-blue-600" />
                       <span>{order.technicianName.toUpperCase()}</span>
                     </div>
+
+                    {order.workOrder && (
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md text-[11px] font-bold shrink-0">
+                        OT: {order.workOrder}
+                      </span>
+                    )}
+
+                    {order.destination && (
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md text-[11px] font-bold shrink-0">
+                        Sede: {order.destination}
+                      </span>
+                    )}
 
                     <span className="font-mono text-[11px] text-neutral-500 font-semibold shrink-0">
                       {order.orderNumber}

@@ -179,6 +179,8 @@ export const exportTechnicianOrderToExcel = (order: TechnicianOrder) => {
     '#': idx + 1,
     'N° Pedido': order.orderNumber,
     'Técnico': order.technicianName,
+    'OT (Orden de Trabajo)': order.workOrder || '',
+    'Sede / Llegada': order.destination || '',
     'Fecha': new Date(order.createdAt).toLocaleString('es-PE'),
     'Cód. Artículo': item.cod_arti,
     'Descripción': item.descripcion,
@@ -194,6 +196,8 @@ export const exportTechnicianOrderToExcel = (order: TechnicianOrder) => {
     { wch: 5 },
     { wch: 18 },
     { wch: 22 },
+    { wch: 20 },
+    { wch: 20 },
     { wch: 18 },
     { wch: 14 },
     { wch: 40 },
@@ -214,11 +218,13 @@ export const exportTechnicianOrderToExcel = (order: TechnicianOrder) => {
  * Export a single Technician Order to CSV
  */
 export const exportTechnicianOrderToCSV = (order: TechnicianOrder) => {
-  const headers = ['#', 'N° Pedido', 'Técnico', 'Fecha', 'Cód. Artículo', 'Descripción', 'Cant. Solicitada', 'Unidad', 'Ubicación', 'Estado', 'Nota'];
+  const headers = ['#', 'N° Pedido', 'Técnico', 'OT', 'Sede/Llegada', 'Fecha', 'Cód. Artículo', 'Descripción', 'Cant. Solicitada', 'Unidad', 'Ubicación', 'Estado', 'Nota'];
   const rows = order.items.map((item, idx) => [
     idx + 1,
     `"${order.orderNumber}"`,
     `"${order.technicianName}"`,
+    `"${(order.workOrder || '').replace(/"/g, '""')}"`,
+    `"${(order.destination || '').replace(/"/g, '""')}"`,
     `"${new Date(order.createdAt).toLocaleString('es-PE')}"`,
     `"${item.cod_arti}"`,
     `"${item.descripcion.replace(/"/g, '""')}"`,
@@ -253,6 +259,8 @@ export const exportAllOrdersToExcel = (orders: TechnicianOrder[]) => {
       rows.push({
         'N° Pedido': order.orderNumber,
         'Técnico': order.technicianName,
+        'OT': order.workOrder || '',
+        'Sede / Llegada': order.destination || '',
         'Fecha': new Date(order.createdAt).toLocaleString('es-PE'),
         'Estado': order.status === 'pending' ? 'PENDIENTE' : 'ATENDIDO',
         '# Ítem': idx + 1,
