@@ -166,26 +166,59 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     { id: '014=HERRAMIENTAS', label: 'Herramientas' }
   ];
 
+  // The technician ordering portal ONLY requests materials from Almacén 1 (Principal)
+  const techCatalog = useMemo(() => {
+    const current = internalCatalog.length > 0 ? internalCatalog : getCatalogData();
+    const seen = new Set<string>();
+    const alm1List: CatalogItem[] = [];
+
+    // Filter strictly for Almacén 1 (01=ALMACEN PRINCIPAL) and deduplicate by item code
+    current.forEach((item) => {
+      if (!item.almacen || item.almacen.startsWith('01')) {
+        const key = item.cod_arti.toUpperCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
+          alm1List.push(item);
+        }
+      }
+    });
+
+    return alm1List;
+  }, [internalCatalog]);
+
   const searchResults = useMemo(() => {
-    const currentCatalog = internalCatalog.length > 0 ? internalCatalog : getCatalogData();
     const allAliases = getAliases();
     const q = searchTerm.trim().toLowerCase();
 
     if (q.length > 0) {
-      const matches = searchCatalogFuzzy(q, 60);
       const aliasMatches = allAliases.filter((a) => a.alias.toLowerCase().includes(q));
       const finalMap = new Map<string, { item: CatalogItem; score: number; matchedAlias?: string }>();
 
       aliasMatches.forEach((am) => {
-        const found = currentCatalog.find((c) => c.cod_arti.toUpperCase() === am.cod_arti.toUpperCase());
+        const found = techCatalog.find((c) => c.cod_arti.toUpperCase() === am.cod_arti.toUpperCase());
         if (found) {
           finalMap.set(found.cod_arti, { item: found, score: 100, matchedAlias: am.alias });
         }
       });
 
-      matches.forEach((m) => {
-        if (!finalMap.has(m.item.cod_arti)) {
-          finalMap.set(m.item.cod_arti, { item: m.item, score: m.score });
+      const terms = q.toUpperCase().split(/\s+/).filter(Boolean);
+
+      techCatalog.forEach((item) => {
+        const cod = item.cod_arti.toUpperCase();
+        const desc = item.descripcion.toUpperCase();
+        const fam = (item.familia || '').toUpperCase();
+
+        let score = 0;
+        if (cod === q.toUpperCase()) score = 100;
+        else if (cod.startsWith(q.toUpperCase())) score = 95;
+        else if (desc.startsWith(q.toUpperCase())) score = 90;
+        else if (desc.includes(q.toUpperCase())) score = 85;
+        else if (terms.length > 1 && terms.every(t => desc.includes(t) || cod.includes(t) || fam.includes(t))) {
+          score = 80;
+        }
+
+        if (score > 0 && !finalMap.has(item.cod_arti)) {
+          finalMap.set(item.cod_arti, { item, score });
         }
       });
 
@@ -218,12 +251,12 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
     if (selectedCategory !== 'TODOS') {
       const famKey = selectedCategory.split('=')[1] || selectedCategory;
-      return currentCatalog.filter((i) => (i.familia || '').toUpperCase().includes(famKey)).slice(0, 60);
+      return techCatalog.filter((i) => (i.familia || '').toUpperCase().includes(famKey)).slice(0, 60);
     }
 
     // Default view: Prioritize the most requested/popular items
     const aliasCodes = new Set(allAliases.map((a) => a.cod_arti.toUpperCase().trim()));
-    const sorted = [...currentCatalog].sort((a, b) => {
+    const sorted = [...techCatalog].sort((a, b) => {
       const codeA = a.cod_arti.toUpperCase().trim();
       const codeB = b.cod_arti.toUpperCase().trim();
       const descA = a.descripcion.toLowerCase();
@@ -260,7 +293,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     });
 
     return sorted.slice(0, 48);
-  }, [searchTerm, selectedCategory, internalCatalog]);
+  }, [searchTerm, selectedCategory, techCatalog]);
 
   const getItemQuantityInCart = (codArti: string): number => {
     const found = cart.find((c) => c.item.cod_arti === codArti);
