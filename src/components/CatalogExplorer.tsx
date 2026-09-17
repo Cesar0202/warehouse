@@ -113,18 +113,45 @@ export const CatalogExplorer: React.FC<CatalogExplorerProps> = ({
 
     if (searchTerm.trim().length >= 1) {
       const q = searchTerm.trim().toUpperCase();
-      const codeMatches = warehouseItems.filter(i => i.cod_arti.toUpperCase().includes(q));
-      if (codeMatches.length > 0 && q.length >= 2) {
-        list = codeMatches;
-      } else {
-        const terms = q.split(/\s+/).filter(Boolean);
-        list = warehouseItems.filter(item => {
-          const desc = item.descripcion.toUpperCase();
-          const cod = item.cod_arti.toUpperCase();
-          const fam = (item.familia || '').toUpperCase();
-          return terms.every(t => desc.includes(t) || cod.includes(t) || fam.includes(t));
-        });
+      const terms = q.split(/\s+/).filter(Boolean);
+      const scored: { item: CatalogItem; score: number }[] = [];
+
+      for (const item of warehouseItems) {
+        const desc = item.descripcion.toUpperCase().trim();
+        const cod = item.cod_arti.toUpperCase().trim();
+        const fam = (item.familia || '').toUpperCase().trim();
+
+        let score = 0;
+
+        // 1. Exact full description
+        if (desc === q) score = 1000;
+        // 2. Exact code match
+        else if (cod === q) score = 900;
+        // 3. Description starts with search query (e.g. "EXTRACTOR DE AIRE...")
+        else if (desc.startsWith(q)) score = 500;
+        // 4. Code starts with search query
+        else if (cod.startsWith(q)) score = 400;
+        // 5. Whole word match in description
+        else if (new RegExp(`(?:^|\\s)${q}(?:$|\\s|\\,|\\.|\\-)`).test(desc)) score = 300;
+        // 6. Substring in description
+        else if (desc.includes(q)) score = 200;
+        // 7. All search terms in description
+        else if (terms.length > 1 && terms.every(t => desc.includes(t))) score = 150;
+        // 8. Code contains search query
+        else if (cod.includes(q)) score = 100;
+        // 9. All terms found across desc, cod, fam
+        else if (terms.every(t => desc.includes(t) || cod.includes(t) || fam.includes(t))) {
+          score = 20; // Lower tier if only matched via family/category
+        }
+
+        if (score > 0) {
+          scored.push({ item, score });
+        }
       }
+
+      // Sort by relevance score descending
+      scored.sort((a, b) => b.score - a.score);
+      list = scored.map(s => s.item);
     } else {
       list = [...warehouseItems];
     }

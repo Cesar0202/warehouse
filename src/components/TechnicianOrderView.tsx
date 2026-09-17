@@ -240,49 +240,65 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
   const searchResults = useMemo(() => {
     const allAliases = getAliases();
-    const q = searchTerm.trim().toLowerCase();
+    const q = searchTerm.trim().toUpperCase();
 
     if (q.length > 0) {
-      const aliasMatches = allAliases.filter((a) => a.alias.toLowerCase().includes(q));
+      const aliasMatches = allAliases.filter((a) => a.alias.toUpperCase().includes(q));
       const finalMap = new Map<string, { item: CatalogItem; score: number; matchedAlias?: string }>();
 
       aliasMatches.forEach((am) => {
         const foundList = techCatalog.filter((c) => c.cod_arti.toUpperCase() === am.cod_arti.toUpperCase());
         foundList.forEach(found => {
-          finalMap.set(getItemCartKey(found), { item: found, score: 100, matchedAlias: am.alias });
+          finalMap.set(getItemCartKey(found), { item: found, score: 600, matchedAlias: am.alias });
         });
       });
 
-      const terms = q.toUpperCase().split(/\s+/).filter(Boolean);
+      const terms = q.split(/\s+/).filter(Boolean);
 
       techCatalog.forEach((item) => {
-        const cod = item.cod_arti.toUpperCase();
-        const desc = item.descripcion.toUpperCase();
-        const fam = (item.familia || '').toUpperCase();
+        const cod = item.cod_arti.toUpperCase().trim();
+        const desc = item.descripcion.toUpperCase().trim();
+        const fam = (item.familia || '').toUpperCase().trim();
 
         let score = 0;
-        if (cod === q.toUpperCase()) score = 100;
-        else if (cod.startsWith(q.toUpperCase())) score = 95;
-        else if (desc.startsWith(q.toUpperCase())) score = 90;
-        else if (desc.includes(q.toUpperCase())) score = 85;
-        else if (terms.length > 1 && terms.every(t => desc.includes(t) || cod.includes(t) || fam.includes(t))) {
-          score = 80;
+
+        // 1. Exact full description match
+        if (desc === q) score = 1000;
+        // 2. Exact code match
+        else if (cod === q) score = 900;
+        // 3. Description starts with search query (e.g. "EXTRACTOR DE AIRE...")
+        else if (desc.startsWith(q)) score = 500;
+        // 4. Code starts with search query
+        else if (cod.startsWith(q)) score = 400;
+        // 5. Whole word match in description
+        else if (new RegExp(`(?:^|\\s)${q}(?:$|\\s|\\,|\\.|\\-)`).test(desc)) score = 300;
+        // 6. Substring in description
+        else if (desc.includes(q)) score = 200;
+        // 7. All search terms in description
+        else if (terms.length > 1 && terms.every(t => desc.includes(t))) score = 150;
+        // 8. Code contains search query
+        else if (cod.includes(q)) score = 100;
+        // 9. All terms found across desc, cod, fam
+        else if (terms.every(t => desc.includes(t) || cod.includes(t) || fam.includes(t))) {
+          score = 20; // Lower tier if only matched via family/category
         }
 
         const itemKey = getItemCartKey(item);
-        if (score > 0 && !finalMap.has(itemKey)) {
+        const existing = finalMap.get(itemKey);
+        if (score > 0 && (!existing || score > existing.score)) {
           finalMap.set(itemKey, { item, score });
         }
       });
 
-      let resultsList = Array.from(finalMap.values()).map((r) => r.item);
+      // Sort by score descending!
+      let scoredList = Array.from(finalMap.values()).sort((a, b) => b.score - a.score);
 
       if (selectedCategory !== 'TODOS') {
         const famKey = selectedCategory.split('=')[1] || selectedCategory;
-        resultsList = resultsList.filter((i) => (i.familia || '').toUpperCase().includes(famKey));
+        scoredList = scoredList.filter((r) => (r.item.familia || '').toUpperCase().includes(famKey));
       }
 
-      return resultsList.slice(0, 60);
+      return scoredList.slice(0, 60).map((r) => r.item);
     }
 
     const POPULAR_PRIORITY_CODES = [
