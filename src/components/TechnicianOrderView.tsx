@@ -93,7 +93,6 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
     }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [orderNote, setOrderNote] = useState('');
   const [submittedOrder, setSubmittedOrder] = useState<TechnicianOrder | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -305,10 +304,9 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
 
     setIsSubmitting(true);
     try {
-      const created = createTechnicianOrder(techName.trim(), cart, orderNote);
+      const created = createTechnicianOrder(techName.trim(), cart);
       setSubmittedOrder(created);
       setCart([]);
-      setOrderNote('');
       onShowToast(
         'success',
         '¡Solicitud enviada al Almacén!',
@@ -735,19 +733,6 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                     })}
                   </div>
 
-                  {/* Order Note */}
-                  <div>
-                    <label className="block text-[11px] font-semibold text-neutral-400 mb-1.5">
-                      Nota u Observación (Opcional):
-                    </label>
-                    <input
-                      type="text"
-                      value={orderNote}
-                      onChange={(e) => setOrderNote(e.target.value)}
-                      placeholder="Ej: Piso 3, urgente, proyecto central..."
-                      className="w-full px-3.5 py-2.5 bg-neutral-950 border border-neutral-800 rounded-xl text-xs text-white placeholder-neutral-500 focus:border-neutral-500 outline-none"
-                    />
-                  </div>
                 </div>
 
                 {/* Modal Footer / Direct Warehouse Submission */}
