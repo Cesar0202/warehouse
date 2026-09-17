@@ -36,9 +36,9 @@ export const CATALOG_SYNC_EVENT = 'catalog_sync_updated';
 const MQTT_TOPIC_ORDERS_STATE = 'cesar_wh_orders_v3/state';
 const MQTT_TOPIC_ORDERS_ACTION = 'cesar_wh_orders_v3/action';
 const MQTT_TOPIC_HIDDEN_ITEMS = 'cesar_wh_hidden_items_v3/state';
+const MQTT_TOPIC_HIDDEN_ITEMS_ACTION = 'cesar_wh_hidden_items_v3/action';
 const MQTT_TOPIC_ITEM_PREFIX = 'cesar_wh_item_v3/'; // + itemKey
 const MQTT_TOPIC_ITEM_WILDCARD = 'cesar_wh_item_v3/+';
-const MQTT_TOPIC_SYNC_REQ = 'cesar_wh_sync_v3/request';
 
 const BROKER_URLS = [
   'wss://broker.emqx.io:8084/mqtt',
@@ -137,15 +137,8 @@ export const initRealtimeSync = (): void => {
       mqttClient?.subscribe(MQTT_TOPIC_ORDERS_STATE, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_ORDERS_ACTION, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_HIDDEN_ITEMS, { qos: 1 });
+      mqttClient?.subscribe(MQTT_TOPIC_HIDDEN_ITEMS_ACTION, { qos: 1 });
       mqttClient?.subscribe(MQTT_TOPIC_ITEM_WILDCARD, { qos: 1 });
-      mqttClient?.subscribe(MQTT_TOPIC_SYNC_REQ, { qos: 1 });
-
-      try {
-        mqttClient?.publish(MQTT_TOPIC_SYNC_REQ, JSON.stringify({ timestamp: Date.now() }), { qos: 1 });
-        pushLocalOverridesToRetain();
-      } catch (e) {
-        console.warn('Error on connect sync:', e);
-      }
     });
 
     mqttClient.on('message', (topic, payload) => {
@@ -215,7 +208,34 @@ export const initRealtimeSync = (): void => {
           console.warn('Error parsing incoming real-time MQTT orders state:', err);
         }
       }
-      // 3. Hidden Items Real-Time Synchronization
+      // 3. Hidden Items Instant Actions
+      else if (topic === MQTT_TOPIC_HIDDEN_ITEMS_ACTION) {
+        try {
+          const data = JSON.parse(payload.toString());
+          if (data && data.key) {
+            const raw = localStorage.getItem('app_hidden_items_v1');
+            const set = new Set<string>(
+              raw ? JSON.parse(raw) : [
+                '01=ALMACEN PRINCIPAL__CIN08',
+                '01=ALMACEN PRINCIPAL__CIN20',
+                '01=ALMACEN PRINCIPAL__CIN21',
+                '02=ALMACEN DE ACTIVOS FIJOS__CIN06'
+              ]
+            );
+            if (data.hidden) {
+              set.add(data.key);
+            } else {
+              set.delete(data.key);
+            }
+            const updated = Array.from(set);
+            localStorage.setItem('app_hidden_items_v1', JSON.stringify(updated));
+            window.dispatchEvent(new CustomEvent(CATALOG_SYNC_EVENT, { detail: { type: 'HIDDEN_ITEM_ACTION', key: data.key, hidden: data.hidden } }));
+          }
+        } catch (err) {
+          console.warn('Error parsing hidden item action MQTT:', err);
+        }
+      }
+      // 4. Hidden Items Full State (Retained)
       else if (topic === MQTT_TOPIC_HIDDEN_ITEMS) {
         try {
           const incomingHidden: string[] = JSON.parse(payload.toString());
@@ -227,7 +247,7 @@ export const initRealtimeSync = (): void => {
           console.warn('Error parsing incoming hidden items MQTT:', err);
         }
       }
-      // 4. Individual Item / Photo / Stock Sync
+      // 5. Individual Item / Photo / Stock Sync
       else if (topic.startsWith(MQTT_TOPIC_ITEM_PREFIX)) {
         try {
           const data = JSON.parse(payload.toString());
@@ -254,10 +274,6 @@ export const initRealtimeSync = (): void => {
         } catch (err) {
           console.warn('Error parsing single item sync from MQTT:', err);
         }
-      }
-      // 5. Sync Request
-      else if (topic === MQTT_TOPIC_SYNC_REQ) {
-        pushLocalOverridesToRetain();
       }
     });
 
@@ -291,16 +307,32 @@ const pushLocalOverridesToRetain = () => {
       });
       mqttClient?.publish(MQTT_TOPIC_ITEM_PREFIX + encodeURIComponent(key), payload, { qos: 1, retain: true });
     });
-
-    const hiddenRaw = localStorage.getItem('app_hidden_items_v1');
-    if (hiddenRaw) {
-      const hiddenKeys = JSON.parse(hiddenRaw);
-      if (Array.isArray(hiddenKeys)) {
-        mqttClient?.publish(MQTT_TOPIC_HIDDEN_ITEMS, JSON.stringify(hiddenKeys), { qos: 1, retain: true });
-      }
-    }
   } catch (e) {
     console.warn('Error pushing local overrides to retain:', e);
+  }
+};
+
+/**
+ * Broadcast toggle of hidden item in real time to all phones and devices
+ */
+export const broadcastToggleHiddenItem = (key: string, isHidden: boolean, allHiddenKeys: string[]): void => {
+  if (!mqttClient || !mqttClient.connected) {
+    initRealtimeSync();
+  }
+
+  try {
+    mqttClient?.publish(
+      MQTT_TOPIC_HIDDEN_ITEMS_ACTION,
+      JSON.stringify({ action: 'TOGGLE_HIDE', key, hidden: isHidden, timestamp: Date.now() }),
+      { qos: 1 }
+    );
+    mqttClient?.publish(
+      MQTT_TOPIC_HIDDEN_ITEMS,
+      JSON.stringify(allHiddenKeys),
+      { qos: 1, retain: true }
+    );
+  } catch (e) {
+    console.warn('Error broadcasting hidden item:', e);
   }
 };
 

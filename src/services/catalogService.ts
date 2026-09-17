@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
 import * as XLSX from 'xlsx';
 import { CatalogItem } from '../types';
-import { broadcastCatalogSync, broadcastCatalogItemSync, broadcastHiddenItems } from './technicianOrderService';
+import { broadcastCatalogSync, broadcastCatalogItemSync, broadcastHiddenItems, broadcastToggleHiddenItem } from './technicianOrderService';
 
 let catalogData: CatalogItem[] = [];
 let catalogMap = new Map<string, CatalogItem>();
@@ -34,16 +34,20 @@ export const getHiddenItemKeys = (): Set<string> => {
 };
 
 export const isItemHidden = (codArti: string, almacen?: string): boolean => {
+  const keys = getHiddenItemKeys();
+  const normCode = (codArti || '').toUpperCase().trim();
   const key = getItemKey(codArti, almacen);
-  return getHiddenItemKeys().has(key);
+  return keys.has(key) || keys.has(normCode);
 };
 
 export const toggleProductHidden = (codArti: string, almacen?: string): boolean => {
   const key = getItemKey(codArti, almacen);
+  const normCode = (codArti || '').toUpperCase().trim();
   const set = getHiddenItemKeys();
   let isNowHidden = false;
-  if (set.has(key)) {
+  if (set.has(key) || set.has(normCode)) {
     set.delete(key);
+    set.delete(normCode);
     isNowHidden = false;
   } else {
     set.add(key);
@@ -51,9 +55,8 @@ export const toggleProductHidden = (codArti: string, almacen?: string): boolean 
   }
   const arr = Array.from(set);
   localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(arr));
-  broadcastHiddenItems(arr);
+  broadcastToggleHiddenItem(key, isNowHidden, arr);
 
-  const normCode = (codArti || '').toUpperCase().trim();
   const alm = normalizeWarehouseName(almacen);
   const updatedItems = catalogData.map(item => {
     const itemCode = item.cod_arti.toUpperCase().trim();
