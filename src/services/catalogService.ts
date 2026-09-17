@@ -126,6 +126,55 @@ export const saveItemOverride = (codArti: string, fields: Partial<CatalogItem>, 
 };
 
 export const initCatalog = async (): Promise<CatalogItem[]> => {
+  // Rescue any custom photos previously uploaded by the user
+  try {
+    const keysToScan = [
+      'app_item_overrides_v1',
+      'app_custom_catalog_v2',
+      'app_custom_catalog_v1',
+      'app_custom_catalog'
+    ];
+    const currentOverrides = getItemOverrides();
+    let photosRescued = false;
+
+    for (const k of keysToScan) {
+      const raw = localStorage.getItem(k);
+      if (!raw) continue;
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          for (const item of parsed) {
+            const f = item.foto || item.imagen || item.image_url;
+            if (f && typeof f === 'string' && !f.startsWith('data:image/svg') && !f.includes('unsplash.com')) {
+              const key = getItemKey(item.cod_arti, item.almacen);
+              if (!currentOverrides[key]?.foto) {
+                currentOverrides[key] = { ...(currentOverrides[key] || {}), foto: f };
+                photosRescued = true;
+              }
+            }
+          }
+        } else if (typeof parsed === 'object' && parsed !== null) {
+          for (const [codeOrKey, val] of Object.entries<any>(parsed)) {
+            const f = val?.foto || val?.imagen || val?.image_url;
+            if (f && typeof f === 'string' && !f.startsWith('data:image/svg') && !f.includes('unsplash.com')) {
+              const key = codeOrKey.includes('__') ? codeOrKey : getItemKey(codeOrKey, '01=ALMACEN PRINCIPAL');
+              if (!currentOverrides[key]?.foto) {
+                currentOverrides[key] = { ...(currentOverrides[key] || {}), foto: f };
+                photosRescued = true;
+              }
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (photosRescued) {
+      localStorage.setItem(CUSTOM_OVERRIDES_KEY, JSON.stringify(currentOverrides));
+    }
+  } catch (e) {
+    console.warn('Error rescuing photos:', e);
+  }
+
   // Purge legacy corrupted keys from previous session
   try {
     localStorage.removeItem('app_custom_catalog');
