@@ -18,18 +18,6 @@ export const getProductImageUrl = (
     return item.image_url.trim();
   }
 
-  // 2. Cross-warehouse fallback: if this code exists with a real photo in any warehouse, use it
-  const code = (item.cod_arti || '').toUpperCase().trim();
-  if (code) {
-    const catalog = getCatalogData();
-    const match = catalog.find(
-      c => c.cod_arti.toUpperCase().trim() === code && c.foto && !c.foto.startsWith('data:image/svg')
-    );
-    if (match && match.foto) {
-      return match.foto.trim();
-    }
-  }
-
-  // Pure clean neutral hardware box icon
+  // Return pure clean neutral hardware box icon if no custom photo
   return DEFAULT_PRODUCT_IMAGE;
 };

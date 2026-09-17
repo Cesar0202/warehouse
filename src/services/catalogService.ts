@@ -146,7 +146,8 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
           for (const item of parsed) {
             const f = item.foto || item.imagen || item.image_url;
             if (f && typeof f === 'string' && !f.startsWith('data:image/svg') && !f.includes('unsplash.com')) {
-              const key = getItemKey(item.cod_arti, item.almacen);
+              const alm = item.almacen || (item.descripcion?.toUpperCase().includes('EXTENSION') ? '02=ALMACEN DE ACTIVOS FIJOS' : '01=ALMACEN PRINCIPAL');
+              const key = getItemKey(item.cod_arti, alm);
               if (!currentOverrides[key]?.foto) {
                 currentOverrides[key] = { ...(currentOverrides[key] || {}), foto: f };
                 photosRescued = true;
@@ -157,7 +158,21 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
           for (const [codeOrKey, val] of Object.entries<any>(parsed)) {
             const f = val?.foto || val?.imagen || val?.image_url;
             if (f && typeof f === 'string' && !f.startsWith('data:image/svg') && !f.includes('unsplash.com')) {
-              const key = codeOrKey.includes('__') ? codeOrKey : getItemKey(codeOrKey, '01=ALMACEN PRINCIPAL');
+              let key = '';
+              if (codeOrKey.includes('__')) {
+                key = codeOrKey;
+              } else if (codeOrKey.startsWith('02=') || codeOrKey.startsWith('02_')) {
+                key = getItemKey(codeOrKey.replace(/^02[=_]/, ''), '02=ALMACEN DE ACTIVOS FIJOS');
+              } else if (codeOrKey.startsWith('03=') || codeOrKey.startsWith('03_')) {
+                key = getItemKey(codeOrKey.replace(/^03[=_]/, ''), '03=ALMACEN TEMPORAL');
+              } else if (val?.almacen) {
+                key = getItemKey(val.cod_arti || codeOrKey, val.almacen);
+              } else if (val?.descripcion?.toUpperCase().includes('EXTENSION')) {
+                key = getItemKey(val.cod_arti || codeOrKey, '02=ALMACEN DE ACTIVOS FIJOS');
+              } else {
+                key = getItemKey(val?.cod_arti || codeOrKey, '01=ALMACEN PRINCIPAL');
+              }
+
               if (!currentOverrides[key]?.foto) {
                 currentOverrides[key] = { ...(currentOverrides[key] || {}), foto: f };
                 photosRescued = true;
@@ -174,15 +189,6 @@ export const initCatalog = async (): Promise<CatalogItem[]> => {
   } catch (e) {
     console.warn('Error rescuing photos:', e);
   }
-
-  // Purge legacy corrupted keys from previous session
-  try {
-    localStorage.removeItem('app_custom_catalog');
-    localStorage.removeItem('app_custom_catalog_v1');
-    localStorage.removeItem('app_custom_catalog_v2');
-    localStorage.removeItem('app_stock_overrides_v1');
-    localStorage.removeItem('app_item_overrides_v1');
-  } catch {}
 
   const stockOverrides = getStockOverrides();
   const itemOverrides = getItemOverrides();
