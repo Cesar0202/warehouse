@@ -659,10 +659,10 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                 <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
                   {/* Formulario de Datos: Técnico, OT, Sede */}
                   <div className="p-4 bg-neutral-950 rounded-2xl border border-neutral-800 space-y-3">
-                    {/* Técnico Responsable */}
+                    {/* Nombre del Técnico */}
                     <div>
                       <label className="block text-xs font-semibold text-neutral-300 mb-1.5">
-                        Técnico Responsable <span className="text-red-400 font-bold">*</span>
+                        Nombre del Técnico <span className="text-red-400 font-bold">*</span>
                       </label>
                       <input
                         type="text"
@@ -672,7 +672,7 @@ export const TechnicianOrderView: React.FC<TechnicianOrderViewProps> = ({
                           setTechName(val);
                           localStorage.setItem(TECH_NAME_STORAGE, val);
                         }}
-                        placeholder="Nombre o código del técnico..."
+                        placeholder="Ej: Fernando, Juan Pérez..."
                         autoFocus={!techName.trim()}
                         className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 focus:border-neutral-500 rounded-xl text-xs sm:text-sm font-semibold text-white placeholder-neutral-500 outline-none transition-all"
                       />
